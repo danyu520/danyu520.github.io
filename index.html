@@ -1,0 +1,4248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级虚拟货币交易模拟系统 - 增强版</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <style>
+        :root {
+            --up-color: #f44336;
+            --down-color: #4CAF50;
+            --primary-color: #2196F3;
+            --warning-color: #FF9800;
+            --special-color: #9C27B0;
+            --rescue-color: #FF5722;
+            --dark-color: #333;
+            --light-color: #f5f5f5;
+            --success-color: #8BC34A;
+            --info-color: #00BCD4;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .price-display {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .price-change {
+            margin-left: 10px;
+            font-size: 18px;
+        }
+        .up { color: var(--up-color); }
+        .down { color: var(--down-color); }
+        .market-data {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .data-item {
+            text-align: center;
+        }
+        .data-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .data-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .btn {
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn-up { background-color: var(--up-color); }
+        .btn-down { background-color: var(--down-color); }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-warning { background-color: var(--warning-color); }
+        .btn-special { background-color: var(--special-color); }
+        .btn-rescue { background-color: var(--rescue-color); }
+        .btn-success { background-color: var(--success-color); }
+        .btn-info { background-color: var(--info-color); }
+        .btn-group {
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .scenario-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .trade-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .trade-panel {
+            padding: 15px;
+            border-radius: 8px;
+        }
+        #buyPanel { background-color: rgba(76, 175, 80, 0.1); }
+        #sellPanel { background-color: rgba(244, 67, 54, 0.1); }
+        .chart-container {
+            height: 400px;
+            margin-top: 20px;
+        }
+        .auto-controls {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .auto-controls label {
+            margin-right: 10px;
+            margin-bottom: 0;
+        }
+        #autoInterval {
+            width: 60px;
+            margin-right: 10px;
+        }
+        .user-balance {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .balance-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .transaction-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .transaction-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .transaction-buy { color: var(--down-color); }
+        .transaction-sell { color: var(--up-color); }
+        .tab-container {
+            display: flex;
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .advanced-scenario {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .leverage-controls {
+            background-color: #fff8e1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .order-book {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .order-side {
+            display: flex;
+            flex-direction: column;
+        }
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .order-row.bid {
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        .order-row.ask {
+            background-color: rgba(244, 67, 54, 0.1);
+        }
+        .depth-chart-container {
+            height: 200px;
+            margin-top: 15px;
+        }
+        .news-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        .news-time {
+            font-size: 12px;
+            color: #666;
+        }
+        .news-content {
+            margin-top: 5px;
+        }
+        .news-positive {
+            border-left: 3px solid var(--down-color);
+        }
+        .news-negative {
+            border-left: 3px solid var(--up-color);
+        }
+        .news-neutral {
+            border-left: 3px solid var(--primary-color);
+        }
+        .portfolio-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .portfolio-profit {
+            font-weight: bold;
+        }
+        .profit-positive {
+            color: var(--down-color);
+        }
+        .profit-negative {
+            color: var(--up-color);
+        }
+        .strategy-controls {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .social-sentiment {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .sentiment-bar {
+            flex-grow: 1;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+        .sentiment-fill {
+            height: 100%;
+            width: 50%;
+            background-color: var(--down-color);
+        }
+        .sentiment-value {
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+        .market-depth {
+            margin-top: 15px;
+        }
+        .market-maker-controls {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .derivatives-panel {
+            background-color: #f3e5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .dark-mode .panel,
+        .dark-mode .user-balance,
+        .dark-mode .news-item {
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+        .dark-mode .data-label {
+            color: #aaaaaa;
+        }
+        .dark-mode input,
+        .dark-mode select {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border-color: #444;
+        }
+        .dark-mode .advanced-scenario {
+            background-color: #252525;
+        }
+        .dark-mode .leverage-controls {
+            background-color: #332c1e;
+        }
+        .dark-mode .strategy-controls {
+            background-color: #1e2a1e;
+        }
+        .dark-mode .market-maker-controls {
+            background-color: #1e252e;
+        }
+        .dark-mode .derivatives-panel {
+            background-color: #2a1e2e;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .dark-mode .tooltip .tooltiptext {
+            background-color: #333;
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        .notification.error {
+            background-color: #f44336;
+        }
+        .notification.warning {
+            background-color: #FF9800;
+        }
+        .notification.info {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="dark-mode-toggle">
+        <button id="darkModeToggle" class="btn btn-special">🌓 暗黑模式</button>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <div class="header">
+        <h1>高级虚拟货币交易模拟系统 - 增强版</h1>
+        <p>模拟真实市场行为 - 支持多种交易策略和市场情景</p>
+    </div>
+    
+    <div class="dashboard">
+        <div class="panel">
+            <h2>市场行情</h2>
+            <div class="price-display">
+                1 波动币 = <span id="current-price">1</span> 元
+                <span class="price-change up" id="price-change">+0.32 (6.4%)</span>
+            </div>
+            <div class="market-data">
+                <div class="data-item">
+                    <div class="data-value" id="market-cap">10</div>
+                    <div class="data-label">市值(元)</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="volume">0</div>
+                    <div class="data-label">24h成交量</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="high-price">0</div>
+                    <div class="data-label">24h最高</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="low-price">0</div>
+                    <div class="data-label">24h最低</div>
+                </div>
+            </div>
+            
+            <div class="social-sentiment">
+                <span>市场情绪:</span>
+                <div class="sentiment-bar">
+                    <div class="sentiment-fill" id="sentiment-fill"></div>
+                </div>
+                <span class="sentiment-value" id="sentiment-value">50%</span>
+            </div>
+            
+            <div class="auto-controls">
+                <label for="autoInterval">自动间隔(秒):</label>
+                <input type="number" id="autoInterval" min="1" value="10">
+                <button id="toggleAuto" class="btn btn-primary">启动自动波动</button>
+                <select id="autoMode" class="btn">
+                    <option value="random">随机模式</option>
+                    <option value="sideways">横盘震荡</option>
+                    <option value="volatile">剧烈波动</option>
+                    <option value="trend">趋势模式</option>
+                    <option value="cycle">周期循环</option>
+                    <option value="pump-dump">拉盘砸盘</option>
+                    <option value="whale">鲸鱼操纵</option>
+                    <option value="rollercoaster">跌宕起伏</option>
+                    <option value="market-maker">做市商模式</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="user-balance">
+            <h2>我的资产</h2>
+            <div class="balance-item">
+                <span>现金余额:</span>
+                <span id="cash-balance">100,000.00 元</span>
+            </div>
+            <div class="balance-item">
+                <span>波动币持仓:</span>
+                <span id="coin-balance">0.00 波动币</span>
+            </div>
+            <div class="balance-item">
+                <span>合约持仓:</span>
+                <span id="contract-balance">0 张</span>
+            </div>
+            <div class="balance-item">
+                <span>总资产价值:</span>
+                <span id="total-assets">100,000.00 元</span>
+            </div>
+            <div class="balance-item">
+                <span>杠杆倍数:</span>
+                <span id="leverage">1×</span>
+            </div>
+            <div class="balance-item">
+                <span>今日盈亏:</span>
+                <span id="daily-pnl" class="profit-neutral">0.00 元 (0.00%)</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <div class="tab-container">
+            <div class="tab active" data-tab="scenarios">市场情景</div>
+            <div class="tab" data-tab="technical">技术分析</div>
+            <div class="tab" data-tab="advanced">高级模拟</div>
+            <div class="tab" data-tab="leverage">杠杆交易</div>
+            <div class="tab" data-tab="orderbook">订单簿</div>
+            <div class="tab" data-tab="portfolio">投资组合</div>
+            <div class="tab" data-tab="strategies">交易策略</div>
+            <div class="tab" data-tab="news">市场新闻</div>
+            <div class="tab" data-tab="derivatives">衍生品</div>
+        </div>
+        
+        <div class="tab-content active" id="scenarios-tab">
+            <div class="scenario-title">基本波动</div>
+            <div class="btn-group">
+                <button class="btn btn-up" id="small-up">小幅上涨 (+2%)</button>
+                <button class="btn btn-down" id="small-down">小幅下跌 (-2%)</button>
+                <button class="btn btn-primary" id="random-normal">随机波动 (±5%)</button>
+                <button class="btn btn-up" id="medium-up">温和上涨 (+8%)</button>
+                <button class="btn btn-down" id="medium-down">温和下跌 (-8%)</button>
+            </div>
+            
+            <div class="scenario-title">极端行情</div>
+            <div class="btn-group">
+                <button class="btn btn-up" id="large-up">大幅上涨 (+20%)</button>
+                <button class="btn btn-down" id="large-down">大幅下跌 (-20%)</button>
+                <button class="btn btn-warning" id="flash-crash">闪崩 (-50%)</button>
+                <button class="btn btn-warning" id="moon-shot">火箭发射 (+100%)</button>
+                <button class="btn btn-special" id="bubble-burst">泡沫破裂 (-70%)</button>
+                <button class="btn btn-warning" id="dead-cat-bounce">死猫反弹 (+30%后-50%)</button>
+            </div>
+            
+            <div class="scenario-title">市场形态</div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="sideways">横盘震荡 (±1%)</button>
+                <button class="btn btn-primary" id="volatile">剧烈波动 (±15%)</button>
+                <button class="btn btn-primary" id="trend-up">上升趋势 (+系列)</button>
+                <button class="btn btn-primary" id="trend-down">下降趋势 (-系列)</button>
+                <button class="btn btn-special" id="support-test">测试支撑位</button>
+                <button class="btn btn-special" id="resistance-test">测试阻力位</button>
+                <button class="btn btn-special" id="rollercoaster-btn">跌宕起伏模式</button>
+                <button class="btn btn-special" id="head-shoulders">头肩顶形态</button>
+                <button class="btn btn-special" id="double-bottom">双底形态</button>
+            </div>
+            
+            <div class="scenario-title">系统操作</div>
+            <div class="btn-group">
+                <button class="btn" id="reset-price">重置价格 (5.00元)</button>
+                <button class="btn" id="reset-history">重置历史数据</button>
+                <button class="btn" id="add-liquidity">增加市场流动性</button>
+                <button class="btn" id="panic-sell">市场恐慌抛售</button>
+                <button class="btn" id="market-maker-btn">做市商干预</button>
+                <button class="btn" id="reset-balance">重置我的资产</button>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="technical-tab">
+            <p>技术指标分析面板 (模拟)</p>
+            <div class="btn-group">
+                <button class="btn" id="show-ma">显示均线</button>
+                <button class="btn" id="show-macd">显示MACD</button>
+                <button class="btn" id="show-rsi">显示RSI</button>
+                <button class="btn" id="show-bollinger">显示布林带</button>
+                <button class="btn" id="show-fibonacci">显示斐波那契</button>
+                <button class="btn" id="show-ichimoku">显示一目均衡</button>
+                <button class="btn" id="show-volume">显示成交量</button>
+            </div>
+            <div id="indicator-display" style="height: 200px; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; margin-top: 15px; border-radius: 4px;">
+                <p>选择技术指标将显示在这里</p>
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="indicator-params">指标参数设置</label>
+                <input type="text" id="indicator-params" placeholder="例如: MA周期=5,10,30">
+                <button id="apply-indicator" class="btn btn-primary" style="margin-top: 10px;">应用指标设置</button>
+            </div>
+            
+            <div class="scenario-title">自定义指标</div>
+            <div class="btn-group">
+                <button class="btn btn-info" id="custom-indicator">创建自定义指标</button>
+                <button class="btn btn-info" id="backtest-indicator">回测指标</button>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="advanced-tab">
+            <div class="advanced-scenario">
+                <h3>高级市场模拟</h3>
+                <p>这些情景模拟更复杂的市场行为</p>
+                
+                <div class="scenario-title">市场操纵</div>
+                <div class="btn-group">
+                    <button class="btn btn-warning" id="pump-action">拉盘行动 (+30%)</button>
+                    <button class="btn btn-warning" id="dump-action">砸盘行动 (-40%)</button>
+                    <button class="btn btn-special" id="whale-buy">鲸鱼买入 (大单)</button>
+                    <button class="btn btn-special" id="whale-sell">鲸鱼卖出 (大单)</button>
+                    <button class="btn btn-special" id="spoofing">虚假挂单 (诱骗)</button>
+                    <button class="btn btn-special" id="wash-trade">洗盘交易</button>
+                </div>
+                
+                <div class="scenario-title">市场事件</div>
+                <div class="btn-group">
+                    <button class="btn" id="good-news">利好消息 (+15%)</button>
+                    <button class="btn" id="bad-news">利空消息 (-18%)</button>
+                    <button class="btn" id="exchange-hack">交易所被盗 (-25%)</button>
+                    <button class="btn" id="regulatory">监管消息 (±20%)</button>
+                    <button class="btn" id="fork-event">分叉事件 (±30%)</button>
+                    <button class="btn" id="halving-event">减半事件 (+50%)</button>
+                    <button class="btn" id="airdrop">空投活动 (+15%)</button>
+                </div>
+                
+                <div class="scenario-title">市场周期</div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="bull-market">牛市周期</button>
+                    <button class="btn btn-primary" id="bear-market">熊市周期</button>
+                    <button class="btn btn-primary" id="accumulation">吸筹阶段</button>
+                    <button class="btn btn-primary" id="distribution">派发阶段</button>
+                    <button class="btn btn-primary" id="seasonal-effect">季节性效应</button>
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="custom-change">自定义价格变化 (%)</label>
+                    <input type="number" id="custom-change" step="0.1" placeholder="输入百分比变化">
+                    <button id="apply-custom" class="btn" style="margin-top: 10px;">应用自定义变化</button>
+                </div>
+                
+                <div class="market-maker-controls">
+                    <h4>做市商控制</h4>
+                    <div class="form-group">
+                        <label for="maker-spread">买卖价差 (%)</label>
+                        <input type="range" id="maker-spread" min="0.1" max="5" step="0.1" value="1">
+                        <span id="maker-spread-value">1%</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="maker-volume">做市量 (币)</label>
+                        <input type="number" id="maker-volume" min="10" max="10000" value="100">
+                    </div>
+                    <button id="activate-maker" class="btn btn-info">激活做市商</button>
+                    <button id="stop-maker" class="btn btn-warning">停止做市</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="leverage-tab">
+            <div class="leverage-controls">
+                <h3>杠杆交易系统</h3>
+                <p>通过杠杆放大您的交易能力，但请注意风险</p>
+                
+                <div class="form-group">
+                    <label for="leverage-amount">设置杠杆倍数 (1-100倍)</label>
+                    <input type="range" id="leverage-amount" min="1" max="100" step="1" value="1">
+                    <span id="leverage-display">1×</span>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-rescue" id="leverage-buy">杠杆买入</button>
+                    <button class="btn btn-rescue" id="leverage-sell">杠杆卖出</button>
+                    <button class="btn" id="stop-out">模拟强制平仓</button>
+                    <button class="btn" id="hedge-position">对冲持仓</button>
+                </div>
+                
+                <div class="scenario-title">救市措施</div>
+                <div class="btn-group">
+                    <button class="btn btn-rescue" id="market-rescue">政府救市 (+25%)</button>
+                    <button class="btn btn-rescue" id="institutional-buy">机构护盘 (+15%)</button>
+                    <button class="btn btn-rescue" id="circuit-breaker">熔断机制 (暂停交易)</button>
+                    <button class="btn btn-rescue" id="liquidity-injection">流动性注入</button>
+                </div>
+                
+                <div id="leverage-info" style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 4px;">
+                    <p><strong>杠杆交易说明：</strong></p>
+                    <ul>
+                        <li>杠杆会放大您的收益和亏损</li>
+                        <li>当亏损达到保证金的80%时将触发强制平仓</li>
+                        <li>高杠杆(5倍以上)在剧烈波动市场风险极高</li>
+                        <li>100倍杠杆仅用于模拟极端情况</li>
+                    </ul>
+                </div>
+                
+                <div class="form-group">
+                    <label for="position-size">仓位大小 (%)</label>
+                    <input type="range" id="position-size" min="1" max="100" value="10">
+                    <span id="position-size-value">10%</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="stop-loss">止损设置 (%)</label>
+                    <input type="number" id="stop-loss" min="0" max="100" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="take-profit">止盈设置 (%)</label>
+                    <input type="number" id="take-profit" min="0" max="100" value="10">
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="orderbook-tab">
+            <h3>订单簿深度</h3>
+            <div class="order-book">
+                <div class="order-side">
+                    <h4>买单 (Bids)</h4>
+                    <div id="bid-orders">
+                        <!-- 买单将在这里动态生成 -->
+                    </div>
+                </div>
+                <div class="order-side">
+                    <h4>卖单 (Asks)</h4>
+                    <div id="ask-orders">
+                        <!-- 卖单将在这里动态生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="market-depth">
+                <h4>市场深度图</h4>
+                <div class="depth-chart-container">
+                    <canvas id="depthChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="place-order-type">订单类型</label>
+                <select id="place-order-type" class="btn">
+                    <option value="limit">限价单</option>
+                    <option value="market">市价单</option>
+                    <option value="stop">止损单</option>
+                    <option value="stop-limit">止损限价单</option>
+                    <option value="iceberg">冰山订单</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="place-order-side">买卖方向</label>
+                <select id="place-order-side" class="btn">
+                    <option value="buy">买入</option>
+                    <option value="sell">卖出</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="place-order-amount">数量</label>
+                <input type="number" id="place-order-amount" min="0.01" step="0.01" value="1">
+            </div>
+            
+            <div class="form-group" id="price-group">
+                <label for="place-order-price">价格</label>
+                <input type="number" id="place-order-price" min="0.0001" step="0.0001" value="5.00">
+            </div>
+            
+            <div class="form-group" id="stop-price-group" style="display: none;">
+                <label for="place-order-stop-price">触发价格</label>
+                <input type="number" id="place-order-stop-price" min="0.0001" step="0.0001" value="5.00">
+            </div>
+            
+            <button id="place-order-btn" class="btn btn-primary">提交订单</button>
+            <button id="cancel-all-orders" class="btn btn-warning">撤销所有订单</button>
+        </div>
+        
+        <div class="tab-content" id="portfolio-tab">
+            <h3>我的投资组合</h3>
+            <div class="portfolio-item">
+                <span>初始资金:</span>
+                <span>100,000.00 元</span>
+            </div>
+            <div class="portfolio-item">
+                <span>当前价值:</span>
+                <span id="portfolio-value">100,000.00 元</span>
+            </div>
+            <div class="portfolio-item">
+                <span>总盈亏:</span>
+                <span id="portfolio-pnl" class="profit-neutral">0.00 元 (0.00%)</span>
+            </div>
+            <div class="portfolio-item">
+                <span>夏普比率:</span>
+                <span id="sharpe-ratio">0.00</span>
+            </div>
+            <div class="portfolio-item">
+                <span>最大回撤:</span>
+                <span id="max-drawdown">0.00%</span>
+            </div>
+            
+            <div class="scenario-title">资产分布</div>
+            <div id="asset-allocation" style="height: 200px; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; margin-top: 15px; border-radius: 4px;">
+                <canvas id="allocationChart"></canvas>
+            </div>
+            
+            <div class="scenario-title">历史表现</div>
+            <div id="performance-chart" style="height: 200px; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; margin-top: 15px; border-radius: 4px;">
+                <canvas id="performanceCanvas"></canvas>
+            </div>
+            
+            <div class="btn-group" style="margin-top: 15px;">
+                <button class="btn btn-info" id="rebalance-portfolio">重新平衡组合</button>
+                <button class="btn btn-info" id="diversify-portfolio">分散投资</button>
+                <button class="btn btn-info" id="export-portfolio">导出组合数据</button>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="strategies-tab">
+            <h3>自动化交易策略</h3>
+            <p>设置自动执行的交易策略</p>
+            
+            <div class="strategy-controls">
+                <div class="form-group">
+                    <label for="strategy-select">选择策略</label>
+                    <select id="strategy-select" class="btn">
+                        <option value="mean-reversion">均值回归</option>
+                        <option value="momentum">动量策略</option>
+                        <option value="arbitrage">套利策略</option>
+                        <option value="grid">网格交易</option>
+                        <option value="martingale">马丁格尔</option>
+                        <option value="dca">定投策略</option>
+                        <option value="custom">自定义策略</option>
+                    </select>
+                </div>
+                
+                <div id="mean-reversion-params" class="strategy-params">
+                    <div class="form-group">
+                        <label for="mr-period">观察周期 (天)</label>
+                        <input type="number" id="mr-period" min="5" max="365" value="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="mr-deviation">标准差倍数</label>
+                        <input type="number" id="mr-deviation" min="1" max="5" step="0.1" value="2">
+                    </div>
+                </div>
+                
+                <div id="momentum-params" class="strategy-params" style="display: none;">
+                    <div class="form-group">
+                        <label for="momentum-period">动量周期 (天)</label>
+                        <input type="number" id="momentum-period" min="5" max="365" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="momentum-threshold">阈值 (%)</label>
+                        <input type="number" id="momentum-threshold" min="1" max="50" value="5">
+                    </div>
+                </div>
+                
+                <div id="grid-params" class="strategy-params" style="display: none;">
+                    <div class="form-group">
+                        <label for="grid-upper">上限价格</label>
+                        <input type="number" id="grid-upper" min="0.0001" step="0.0001" value="6.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="grid-lower">下限价格</label>
+                        <input type="number" id="grid-lower" min="0.0001" step="0.0001" value="4.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="grid-levels">网格层数</label>
+                        <input type="number" id="grid-levels" min="3" max="100" value="10">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="strategy-capital">策略资金 (%)</label>
+                    <input type="range" id="strategy-capital" min="1" max="100" value="20">
+                    <span id="strategy-capital-value">20%</span>
+                </div>
+                
+                <button id="activate-strategy" class="btn btn-success">激活策略</button>
+                <button id="backtest-strategy" class="btn btn-info">回测策略</button>
+                <button id="stop-strategy" class="btn btn-warning">停止策略</button>
+                
+                <div id="strategy-status" style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 4px; display: none;">
+                    <p><strong>策略运行中:</strong> <span id="active-strategy-name"></span></p>
+                    <p>已执行交易: <span id="strategy-trades">0</span> 次</p>
+                    <p>策略盈亏: <span id="strategy-pnl">0.00 元</span></p>
+                </div>
+            </div>
+            
+            <div class="scenario-title">策略回测结果</div>
+            <div id="backtest-results" style="height: 200px; overflow-y: auto; margin-top: 15px; padding: 10px; background-color: #f9f9f9; border-radius: 4px; display: none;">
+                <!-- 回测结果将在这里显示 -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="news-tab">
+            <h3>市场新闻与事件</h3>
+            <div class="btn-group">
+                <button class="btn btn-info" id="generate-news">生成随机新闻</button>
+                <button class="btn btn-info" id="clear-news">清空新闻</button>
+            </div>
+            
+            <div id="news-container" style="margin-top: 15px;">
+                <!-- 新闻将在这里动态生成 -->
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="custom-news">自定义新闻内容</label>
+                <input type="text" id="custom-news" placeholder="输入新闻标题">
+                <select id="news-sentiment" style="margin-top: 5px;">
+                    <option value="positive">利好</option>
+                    <option value="negative">利空</option>
+                    <option value="neutral">中性</option>
+                </select>
+                <button id="submit-custom-news" class="btn btn-primary" style="margin-top: 10px;">发布新闻</button>
+            </div>
+            
+            <div class="scenario-title">社交媒体情绪</div>
+            <div class="social-sentiment">
+                <span>Twitter:</span>
+                <div class="sentiment-bar">
+                    <div class="sentiment-fill" id="twitter-sentiment"></div>
+                </div>
+                <span class="sentiment-value" id="twitter-value">50%</span>
+            </div>
+            
+            <div class="social-sentiment">
+                <span>Reddit:</span>
+                <div class="sentiment-bar">
+                    <div class="sentiment-fill" id="reddit-sentiment"></div>
+                </div>
+                <span class="sentiment-value" id="reddit-value">50%</span>
+            </div>
+            
+            <div class="social-sentiment">
+                <span>Telegram:</span>
+                <div class="sentiment-bar">
+                    <div class="sentiment-fill" id="telegram-sentiment"></div>
+                </div>
+                <span class="sentiment-value" id="telegram-value">50%</span>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="derivatives-tab">
+            <div class="derivatives-panel">
+                <h3>衍生品交易</h3>
+                <p>模拟期货、期权和其他衍生品交易</p>
+                
+                <div class="tab-container" style="margin-top: 15px;">
+                    <div class="tab active" data-tab="futures">期货合约</div>
+                    <div class="tab" data-tab="options">期权合约</div>
+                    <div class="tab" data-tab="swaps">永续合约</div>
+                </div>
+                
+                <div class="tab-content active" id="futures-tab">
+                    <div class="form-group">
+                        <label for="futures-expiry">到期时间</label>
+                        <select id="futures-expiry" class="btn">
+                            <option value="weekly">本周</option>
+                            <option value="monthly">本月</option>
+                            <option value="quarterly">本季度</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="futures-price">期货价格</label>
+                        <input type="number" id="futures-price" min="0.0001" step="0.0001" value="5.00" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="futures-premium">溢价 (%)</label>
+                        <input type="number" id="futures-premium" min="-10" max="10" step="0.1" value="0.5" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="futures-amount">合约数量</label>
+                        <input type="number" id="futures-amount" min="1" max="100" value="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="futures-leverage">杠杆倍数</label>
+                        <select id="futures-leverage" class="btn">
+                            <option value="1">1×</option>
+                            <option value="5">5×</option>
+                            <option value="10">10×</option>
+                            <option value="20">20×</option>
+                            <option value="50">50×</option>
+                        </select>
+                    </div>
+                    
+                    <button id="buy-futures" class="btn btn-down">买入做多</button>
+                    <button id="sell-futures" class="btn btn-up">卖出做空</button>
+                    
+                    <div id="futures-positions" style="margin-top: 15px;">
+                        <h4>我的期货持仓</h4>
+                        <div id="futures-list">
+                            <!-- 期货持仓将在这里显示 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="options-tab">
+                    <div class="form-group">
+                        <label for="options-type">期权类型</label>
+                        <select id="options-type" class="btn">
+                            <option value="call">看涨期权</option>
+                            <option value="put">看跌期权</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="options-strike">行权价格</label>
+                        <input type="number" id="options-strike" min="0.0001" step="0.0001" value="5.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="options-expiry">到期时间</label>
+                        <select id="options-expiry" class="btn">
+                            <option value="weekly">本周</option>
+                            <option value="monthly">本月</option>
+                            <option value="quarterly">本季度</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="options-premium">期权费</label>
+                        <input type="number" id="options-premium" min="0.0001" step="0.0001" value="0.20" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="options-amount">合约数量</label>
+                        <input type="number" id="options-amount" min="1" max="100" value="1">
+                    </div>
+                    
+                    <button id="buy-options" class="btn btn-down">买入期权</button>
+                    <button id="sell-options" class="btn btn-up">卖出期权</button>
+                    
+                    <div id="options-positions" style="margin-top: 15px;">
+                        <h4>我的期权持仓</h4>
+                        <div id="options-list">
+                            <!-- 期权持仓将在这里显示 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="swaps-tab">
+                    <div class="form-group">
+                        <label for="swap-price">永续合约价格</label>
+                        <input type="number" id="swap-price" min="0.0001" step="0.0001" value="5.00" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="swap-funding">资金费率 (%)</label>
+                        <input type="number" id="swap-funding" min="-1" max="1" step="0.0001" value="0.01" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="swap-amount">合约数量</label>
+                        <input type="number" id="swap-amount" min="1" max="100" value="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="swap-leverage">杠杆倍数</label>
+                        <select id="swap-leverage" class="btn">
+                            <option value="1">1×</option>
+                            <option value="5">5×</option>
+                            <option value="10">10×</option>
+                            <option value="20">20×</option>
+                            <option value="50">50×</option>
+                            <option value="100">100×</option>
+                        </select>
+                    </div>
+                    
+                    <button id="long-swap" class="btn btn-down">做多</button>
+                    <button id="short-swap" class="btn btn-up">做空</button>
+                    
+                    <div id="swap-positions" style="margin-top: 15px;">
+                        <h4>我的永续合约</h4>
+                        <div id="swap-list">
+                            <!-- 永续合约持仓将在这里显示 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="scenario-title">衍生品风险分析</div>
+            <div id="derivatives-risk" style="height: 150px; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; margin-top: 15px; border-radius: 4px;">
+                <canvas id="riskChart"></canvas>
+            </div>
+            
+            <div class="btn-group" style="margin-top: 15px;">
+                <button class="btn btn-info" id="hedge-portfolio">对冲投资组合</button>
+                <button class="btn btn-info" id="simulate-expiry">模拟到期结算</button>
+                <button class="btn btn-warning" id="liquidate-derivatives">平仓所有衍生品</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="trade-section">
+        <div class="trade-panel" id="buyPanel">
+            <h3>买入波动币</h3>
+            <div class="form-group">
+                <label for="buy-amount">买入数量</label>
+                <input type="number" id="buy-amount" min="0.01" step="0.01" value="10">
+            </div>
+            <div class="form-group">
+                <label>预估成本</label>
+                <div id="buy-total">53.20 元</div>
+            </div>
+            <div class="form-group">
+                <label>市场影响</label>
+                <div id="buy-impact">+0.05% (轻微)</div>
+            </div>
+            <div class="form-group">
+                <label for="buy-order-type">订单类型</label>
+                <select id="buy-order-type" class="btn">
+                    <option value="market">市价单</option>
+                    <option value="limit">限价单</option>
+                </select>
+            </div>
+            <div class="form-group" id="buy-limit-group" style="display: none;">
+                <label for="buy-limit-price">限价</label>
+                <input type="number" id="buy-limit-price" min="0.0001" step="0.0001" value="5.00">
+            </div>
+            <button id="buy-btn" class="btn btn-down">确认买入</button>
+            <button id="buy-stop-limit" class="btn btn-warning">止损限价单</button>
+        </div>
+        
+        <div class="trade-panel" id="sellPanel">
+            <h3>卖出波动币</h3>
+            <div class="form-group">
+                <label for="sell-amount">卖出数量</label>
+                <input type="number" id="sell-amount" min="0.01" step="0.01" value="10">
+            </div>
+            <div class="form-group">
+                <label>预估收入</label>
+                <div id="sell-total">53.20 元</div>
+            </div>
+            <div class="form-group">
+                <label>市场影响</label>
+                <div id="sell-impact">-0.05% (轻微)</div>
+            </div>
+            <div class="form-group">
+                <label for="sell-order-type">订单类型</label>
+                <select id="sell-order-type" class="btn">
+                    <option value="market">市价单</option>
+                    <option value="limit">限价单</option>
+                </select>
+            </div>
+            <div class="form-group" id="sell-limit-group" style="display: none;">
+                <label for="sell-limit-price">限价</label>
+                <input type="number" id="sell-limit-price" min="0.0001" step="0.0001" value="5.00">
+            </div>
+            <button id="sell-btn" class="btn btn-up">确认卖出</button>
+            <button id="sell-stop-limit" class="btn btn-warning">止损限价单</button>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <h2>价格走势与分析 <span style="font-size: 14px; font-weight: normal;">(支持缩放和拖动)</span></h2>
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="panel">
+        <h2>交易记录</h2>
+        <div class="transaction-history" id="transaction-history">
+            <!-- 交易记录将在这里动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据
+        let currentPrice = 5.00;
+        let priceHistory = generateInitialHistory(30, 4.5, 6.0);
+        let autoIntervalId = null;
+        let currentMode = 'random';
+        let marketCap = 10;
+        let dailyVolume = 0;
+        let high24h = 0;
+        let low24h = 0;
+        let totalSupply = 10000000;
+        let userCash = 100000;
+        let userCoins = 0;
+        let userLeverage = 1;
+        let leveragedPositions = [];
+        let transactions = [];
+        let supportLevel = 4.8;
+        let resistanceLevel = 5.5;
+        let chart = null;
+        let trendDirection = 0;
+        let trendCount = 0;
+        let isBullMarket = false;
+        let isBearMarket = false;
+        let isTradingHalted = false;
+        let rollercoasterPhase = 0;
+        let marketSentiment = 50;
+        let twitterSentiment = 50;
+        let redditSentiment = 50;
+        let telegramSentiment = 50;
+        let initialBalance = 100000;
+        let dailyHighBalance = 100000;
+        let dailyLowBalance = 100000;
+        let portfolioHistory = [];
+        let activeStrategy = null;
+        let strategyTrades = 0;
+        let strategyProfit = 0;
+        let orderBook = {
+            bids: [],
+            asks: []
+        };
+        let userOrders = [];
+        let futuresPositions = [];
+        let optionsPositions = [];
+        let swapPositions = [];
+        let allocationChart = null;
+        let performanceChart = null;
+        let riskChart = null;
+        let depthChart = null;
+        let isDarkMode = false;
+        
+        // 生成初始历史数据
+        function generateInitialHistory(days, minPrice, maxPrice) {
+            let history = [];
+            for (let i = 0; i < days; i++) {
+                history.push(Number((Math.random() * (maxPrice - minPrice) + minPrice).toFixed(2));
+            }
+            return history;
+        }
+        
+        // 生成日期标签
+        function generateDateLabels(count) {
+            const labels = [];
+            const today = new Date();
+            for (let i = count - 1; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                labels.push(formatDate(date));
+            }
+            return labels;
+        }
+        
+        // 格式化日期
+        function formatDate(date) {
+            return `${date.getMonth()+1}/${date.getDate()}`;
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info', duration = 3000) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + type;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, duration);
+        }
+        
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: generateDateLabels(priceHistory.length),
+                    datasets: [{
+                        label: '波动币价格 (元)',
+                        data: priceHistory,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.1,
+                        fill: true,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'xy'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                supportLine: {
+                                    type: 'line',
+                                    yMin: supportLevel,
+                                    yMax: supportLevel,
+                                    borderColor: 'rgb(76, 175, 80)',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    display: false
+                                },
+                                resistanceLine: {
+                                    type: 'line',
+                                    yMin: resistanceLevel,
+                                    yMax: resistanceLevel,
+                                    borderColor: 'rgb(244, 67, 54)',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    display: false
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        intersect: false
+                    }
+                }
+            });
+            
+            // 初始化深度图
+            initDepthChart();
+            
+            // 初始化资产分配图
+            initAllocationChart();
+            
+            // 初始化表现图
+            initPerformanceChart();
+            
+            // 初始化风险图
+            initRiskChart();
+        }
+        
+        // 初始化深度图
+        function initDepthChart() {
+            const ctx = document.getElementById('depthChart').getContext('2d');
+            depthChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '买单深度',
+                            data: [],
+                            backgroundColor: 'rgba(76, 175, 80, 0.5)',
+                            borderColor: 'rgba(76, 175, 80, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '卖单深度',
+                            data: [],
+                            backgroundColor: 'rgba(244, 67, 54, 0.5)',
+                            borderColor: 'rgba(244, 67, 54, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            updateDepthChart();
+        }
+        
+        // 初始化资产分配图
+        function initAllocationChart() {
+            const ctx = document.getElementById('allocationChart').getContext('2d');
+            allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['现金', '波动币', '期货', '期权', '永续合约'],
+                    datasets: [{
+                        data: [100, 0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化表现图
+        function initPerformanceChart() {
+            const ctx = document.getElementById('performanceCanvas').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '投资组合价值',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化风险图
+        function initRiskChart() {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            riskChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['市场风险', '杠杆风险', '流动性风险', '波动性风险', '对手方风险'],
+                    datasets: [{
+                        label: '风险暴露',
+                        data: [20, 10, 15, 25, 5],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(255, 99, 132, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                            },
+                            grid: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                            },
+                            pointLabels: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            },
+                            ticks: {
+                                backdropColor: isDarkMode ? '#121212' : '#ffffff',
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: isDarkMode ? '#ffffff' : '#333333'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新市场数据
+        function updateMarketData(newPrice) {
+            // 更新24小时高/低价
+            if (newPrice > high24h || high24h === 0) high24h = newPrice;
+            if (newPrice < low24h || low24h === 0) low24h = newPrice;
+            
+            // 更新市值
+            marketCap = totalSupply * newPrice;
+            
+            // 更新显示
+            document.getElementById('market-cap').textContent = marketCap.toLocaleString('zh-CN', {maximumFractionDigits: 0});
+            document.getElementById('volume').textContent = dailyVolume.toLocaleString('zh-CN', {maximumFractionDigits: 0});
+            document.getElementById('high-price').textContent = high24h.toFixed(2);
+            document.getElementById('low-price').textContent = low24h.toFixed(2);
+            
+            // 更新衍生品价格
+            updateDerivativesPrices();
+        }
+        
+        // 更新衍生品价格
+        function updateDerivativesPrices() {
+            // 期货价格 (当前价格加上小额溢价)
+            const futuresPremium = 0.005 * currentPrice;
+            document.getElementById('futures-price').value = (currentPrice + futuresPremium).toFixed(4);
+            document.getElementById('futures-premium').value = (futuresPremium / currentPrice * 100).toFixed(2);
+            
+            // 期权费 (基于波动率)
+            const volatility = calculateVolatility();
+            document.getElementById('options-premium').value = (currentPrice * volatility * 0.05).toFixed(4);
+            
+            // 永续合约价格 (接近现货价格)
+            document.getElementById('swap-price').value = currentPrice.toFixed(4);
+            
+            // 资金费率 (随机小幅波动)
+            const fundingRate = (Math.random() * 0.02 - 0.01).toFixed(4);
+            document.getElementById('swap-funding').value = fundingRate;
+        }
+        
+        // 计算波动率
+        function calculateVolatility() {
+            if (priceHistory.length < 2) return 0;
+            
+            let sum = 0;
+            let sumSq = 0;
+            let count = 0;
+            
+            for (let i = 1; i < priceHistory.length; i++) {
+                const change = (priceHistory[i] - priceHistory[i-1]) / priceHistory[i-1];
+                sum += change;
+                sumSq += change * change;
+                count++;
+            }
+            
+            const mean = sum / count;
+            const variance = (sumSq - (sum * sum) / count) / count;
+            return Math.sqrt(variance) * Math.sqrt(365); // 年化波动率
+        }
+        
+        // 更新用户资产
+        function updateUserBalance() {
+            const coinValue = userCoins * currentPrice;
+            const totalAssets = userCash + coinValue + calculateDerivativesValue();
+            
+            // 更新每日盈亏
+            updateDailyPnL(totalAssets);
+            
+            document.getElementById('cash-balance').textContent = userCash.toFixed(2) + ' 元';
+            document.getElementById('coin-balance').textContent = userCoins.toFixed(2) + ' 波动币';
+            document.getElementById('contract-balance').textContent = futuresPositions.length + optionsPositions.length + swapPositions.length + ' 张';
+            document.getElementById('total-assets').textContent = totalAssets.toFixed(2) + ' 元';
+            document.getElementById('leverage').textContent = userLeverage + '×';
+            
+            // 更新投资组合价值
+            document.getElementById('portfolio-value').textContent = totalAssets.toFixed(2) + ' 元';
+            
+            // 更新总盈亏
+            const pnl = totalAssets - initialBalance;
+            const pnlPercent = (pnl / initialBalance * 100).toFixed(2);
+            const pnlElement = document.getElementById('portfolio-pnl');
+            pnlElement.textContent = `${pnl.toFixed(2)} 元 (${pnlPercent}%)`;
+            
+            if (pnl > 0) {
+                pnlElement.className = 'portfolio-profit profit-positive';
+            } else if (pnl < 0) {
+                pnlElement.className = 'portfolio-profit profit-negative';
+            } else {
+                pnlElement.className = 'portfolio-profit profit-neutral';
+            }
+            
+            // 更新买卖表单的最大值
+            document.getElementById('sell-amount').max = userCoins.toFixed(2);
+            
+            // 更新资产分配图
+            updateAllocationChart(coinValue, totalAssets);
+            
+            // 更新投资组合历史
+            updatePortfolioHistory(totalAssets);
+        }
+        
+        // 计算衍生品价值
+        function calculateDerivativesValue() {
+            let value = 0;
+            
+            // 期货价值
+            futuresPositions.forEach(position => {
+                const priceDiff = currentPrice - position.entryPrice;
+                value += position.amount * (position.type === 'long' ? priceDiff : -priceDiff);
+            });
+            
+            // 期权价值 (简化计算)
+            optionsPositions.forEach(option => {
+                const intrinsicValue = option.type === 'call' 
+                    ? Math.max(0, currentPrice - option.strike)
+                    : Math.max(0, option.strike - currentPrice);
+                value += option.amount * intrinsicValue;
+            });
+            
+            // 永续合约价值
+            swapPositions.forEach(swap => {
+                const priceDiff = currentPrice - swap.entryPrice;
+                value += swap.amount * (swap.type === 'long' ? priceDiff : -priceDiff) * swap.leverage;
+            });
+            
+            return value;
+        }
+        
+        // 更新每日盈亏
+        function updateDailyPnL(totalAssets) {
+            if (totalAssets > dailyHighBalance) dailyHighBalance = totalAssets;
+            if (totalAssets < dailyLowBalance) dailyLowBalance = totalAssets;
+            
+            const dailyPnL = totalAssets - 100000; // 简化计算
+            const dailyPnLPercent = (dailyPnL / 100000 * 100).toFixed(2);
+            const dailyPnLElement = document.getElementById('daily-pnl');
+            dailyPnLElement.textContent = `${dailyPnL.toFixed(2)} 元 (${dailyPnLPercent}%)`;
+            
+            if (dailyPnL > 0) {
+                dailyPnLElement.className = 'profit-positive';
+            } else if (dailyPnL < 0) {
+                dailyPnLElement.className = 'profit-negative';
+            } else {
+                dailyPnLElement.className = 'profit-neutral';
+            }
+        }
+        
+        // 更新资产分配图
+        function updateAllocationChart(coinValue, totalAssets) {
+            if (!allocationChart) return;
+            
+            const derivativesValue = calculateDerivativesValue();
+            const cashPercent = (userCash / totalAssets * 100).toFixed(2);
+            const coinPercent = (coinValue / totalAssets * 100).toFixed(2);
+            const derivativesPercent = (derivativesValue / totalAssets * 100).toFixed(2);
+            
+            allocationChart.data.datasets[0].data = [
+                cashPercent,
+                coinPercent,
+                derivativesPercent * 0.4, // 期货
+                derivativesPercent * 0.3, // 期权
+                derivativesPercent * 0.3  // 永续
+            ];
+            
+            allocationChart.update();
+        }
+        
+        // 更新投资组合历史
+        function updatePortfolioHistory(totalAssets) {
+            const now = new Date();
+            const timeLabel = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            portfolioHistory.push({
+                time: timeLabel,
+                value: totalAssets
+            });
+            
+            // 保持最多50个数据点
+            if (portfolioHistory.length > 50) {
+                portfolioHistory.shift();
+            }
+            
+            // 更新表现图
+            updatePerformanceChart();
+            
+            // 更新风险图
+            updateRiskChart();
+        }
+        
+        // 更新表现图
+        function updatePerformanceChart() {
+            if (!performanceChart) return;
+            
+            performanceChart.data.labels = portfolioHistory.map(item => item.time);
+            performanceChart.data.datasets[0].data = portfolioHistory.map(item => item.value);
+            performanceChart.update();
+        }
+        
+        // 更新风险图
+        function updateRiskChart() {
+            if (!riskChart) return;
+            
+            // 简化风险计算
+            const marketRisk = Math.min(100, Math.max(0, calculateVolatility() * 500));
+            const leverageRisk = Math.min(100, Math.max(0, userLeverage * 10));
+            const liquidityRisk = Math.min(100, Math.max(0, 20 + (userCoins / totalSupply * 80)));
+            const volatilityRisk = Math.min(100, Math.max(0, calculateVolatility() * 300));
+            const counterpartyRisk = 5; // 假设固定
+            
+            riskChart.data.datasets[0].data = [
+                marketRisk,
+                leverageRisk,
+                liquidityRisk,
+                volatilityRisk,
+                counterpartyRisk
+            ];
+            
+            riskChart.update();
+        }
+        
+        // 更新价格显示
+        function updatePriceDisplay(newPrice, oldPrice) {
+            if(isTradingHalted) return;
+            
+            const changeAmount = newPrice - oldPrice;
+            const changePercent = (changeAmount / oldPrice) * 100;
+            
+            document.getElementById('current-price').textContent = newPrice.toFixed(2);
+            
+            if (changeAmount >= 0) {
+                document.getElementById('price-change').textContent = 
+                    `+${changeAmount.toFixed(2)} (${changePercent.toFixed(2)}%)`;
+                document.getElementById('price-change').className = 'price-change up';
+            } else {
+                document.getElementById('price-change').textContent = 
+                    `${changeAmount.toFixed(2)} (${changePercent.toFixed(2)}%)`;
+                document.getElementById('price-change').className = 'price-change down';
+            }
+            
+            // 更新市场数据
+            updateMarketData(newPrice);
+            
+            // 更新价格历史
+            priceHistory.shift();
+            priceHistory.push(newPrice);
+            updateChart();
+            
+            // 更新买卖表单
+            updateTradeForms();
+            
+            // 检查杠杆仓位
+            checkLeveragedPositions();
+            
+            // 检查止损止盈订单
+            checkStopOrders(newPrice);
+            
+            // 更新订单簿
+            updateOrderBook(newPrice);
+            
+            // 更新市场情绪
+            updateMarketSentiment(changePercent);
+        }
+        
+        // 更新市场情绪
+        function updateMarketSentiment(changePercent) {
+            // 价格变化影响情绪
+            marketSentiment += changePercent * 0.5;
+            marketSentiment = Math.max(0, Math.min(100, marketSentiment));
+            
+            // 社交媒体情绪跟随市场情绪但有随机波动
+            twitterSentiment = Math.max(0, Math.min(100, marketSentiment + (Math.random() * 20 - 10)));
+            redditSentiment = Math.max(0, Math.min(100, marketSentiment + (Math.random() * 30 - 15)));
+            telegramSentiment = Math.max(0, Math.min(100, marketSentiment + (Math.random() * 40 - 20)));
+            
+            // 更新显示
+            document.getElementById('sentiment-fill').style.width = `${marketSentiment}%`;
+            document.getElementById('sentiment-value').textContent = `${marketSentiment.toFixed(0)}%`;
+            
+            document.getElementById('twitter-sentiment').style.width = `${twitterSentiment}%`;
+            document.getElementById('twitter-value').textContent = `${twitterSentiment.toFixed(0)}%`;
+            
+            document.getElementById('reddit-sentiment').style.width = `${redditSentiment}%`;
+            document.getElementById('reddit-value').textContent = `${redditSentiment.toFixed(0)}%`;
+            
+            document.getElementById('telegram-sentiment').style.width = `${telegramSentiment}%`;
+            document.getElementById('telegram-value').textContent = `${telegramSentiment.toFixed(0)}%`;
+            
+            // 根据情绪调整市场行为
+            if (marketSentiment > 70 && Math.random() > 0.7) {
+                // 市场情绪高涨，可能过度买入
+                changePrice(0.01, 'sentiment');
+            } else if (marketSentiment < 30 && Math.random() > 0.7) {
+                // 市场情绪低落，可能过度卖出
+                changePrice(-0.01, 'sentiment');
+            }
+        }
+        
+        // 更新图表
+        function updateChart() {
+            if (chart) {
+                chart.data.datasets[0].data = priceHistory;
+                
+                // 更新支撑位和阻力位注释
+                chart.options.plugins.annotation.annotations.supportLine.yMin = supportLevel;
+                chart.options.plugins.annotation.annotations.supportLine.yMax = supportLevel;
+                chart.options.plugins.annotation.annotations.resistanceLine.yMin = resistanceLevel;
+                chart.options.plugins.annotation.annotations.resistanceLine.yMax = resistanceLevel;
+                
+                chart.update();
+            }
+        }
+        
+        // 更新买卖表单
+        function updateTradeForms() {
+            const buyAmount = parseFloat(document.getElementById('buy-amount').value) || 0;
+            const sellAmount = parseFloat(document.getElementById('sell-amount').value) || 0;
+            
+            document.getElementById('buy-total').textContent = (buyAmount * currentPrice).toFixed(2) + ' 元';
+            document.getElementById('sell-total').textContent = (sellAmount * currentPrice).toFixed(2) + ' 元';
+            
+            // 计算市场影响
+            const buyImpact = calculateMarketImpact(buyAmount, 'buy');
+            const sellImpact = calculateMarketImpact(sellAmount, 'sell');
+            
+            document.getElementById('buy-impact').textContent = 
+                `${(buyImpact * 100).toFixed(2)}% (${getImpactLevel(buyImpact)})`;
+            document.getElementById('sell-impact').textContent = 
+                `${(sellImpact * 100).toFixed(2)}% (${getImpactLevel(sellImpact)})`;
+            
+            // 更新限价单价格
+            document.getElementById('buy-limit-price').value = currentPrice.toFixed(2);
+            document.getElementById('sell-limit-price').value = currentPrice.toFixed(2);
+            document.getElementById('place-order-price').value = currentPrice.toFixed(2);
+        }
+        
+        // 计算市场影响
+        function calculateMarketImpact(amount, type) {
+            const baseImpact = 0.0001; // 基础影响系数
+            const totalDailyVolume = dailyVolume / currentPrice; // 转换为币数量
+            
+            // 影响与交易量占总流通量的比例相关
+            let impact = (amount / totalDailyVolume) * baseImpact * 100;
+            
+            // 买卖影响不同
+            if (type === 'buy') {
+                // 买入会推高价格
+                return impact;
+            } else {
+                // 卖出会压低价格
+                return -impact;
+            }
+        }
+        
+        // 获取影响级别描述
+        function getImpactLevel(impact) {
+            impact = Math.abs(impact);
+            if (impact < 0.001) return '极小';
+            if (impact < 0.005) return '轻微';
+            if (impact < 0.01) return '中等';
+            if (impact < 0.05) return '显著';
+            return '巨大';
+        }
+        
+        // 改变价格
+        function changePrice(changePercent, source) {
+            if(isTradingHalted) {
+                showNotification("市场暂停交易中，无法改变价格", "error");
+                return 0;
+            }
+            
+            const oldPrice = currentPrice;
+            let newPrice = currentPrice * (1 + changePercent);
+            
+            // 确保价格不会低于0.01元
+            if (newPrice < 0.00001) newPrice = 0.000001;
+            
+            // 应用价格变化
+            currentPrice = parseFloat(newPrice.toFixed(4));
+            
+            // 如果是交易引起的价格变化，增加成交量
+            if (source === 'trade') {
+                const tradeAmount = Math.abs(changePercent) * totalSupply * 10; // 模拟交易量
+                dailyVolume += tradeAmount * currentPrice;
+            }
+            
+            // 更新显示
+            updatePriceDisplay(currentPrice, oldPrice);
+            
+            // 返回实际变化百分比
+            return (currentPrice - oldPrice) / oldPrice;
+        }
+        
+        // 随机波动
+        function randomFluctuation() {
+            if(isTradingHalted) return;
+            
+            let changePercent;
+            
+            switch(currentMode) {
+                case 'random':
+                    // 随机波动 (±5%)
+                    changePercent = (Math.random() * 0.1 - 0.05);
+                    break;
+                
+                case 'sideways':
+                    // 横盘震荡 (±1%)
+                    changePercent = (Math.random() * 0.02 - 0.01);
+                    break;
+                
+                case 'volatile':
+                    // 剧烈波动 (±15%)
+                    changePercent = (Math.random() * 0.3 - 0.15);
+                    break;
+                
+                case 'trend':
+                    // 趋势模式 (持续同向波动)
+                    if (trendCount <= 0 || Math.random() < 0.2) {
+                        trendDirection = Math.random() > 0.5 ? 1 : -1;
+                        trendCount = 3 + Math.floor(Math.random() * 4);
+                    }
+                    changePercent = trendDirection * (0.03 + Math.random() * 0.04);
+                    trendCount--;
+                    break;
+                
+                case 'cycle':
+                    // 周期循环模式 (模拟市场周期)
+                    const cyclePosition = (Date.now() / 60000) % 100 / 100; // 每分钟一个周期
+                    changePercent = Math.sin(cyclePosition * Math.PI * 2) * 0.05;
+                    break;
+                
+                case 'pump-dump':
+                    // 拉盘砸盘模式
+                    if (Math.random() < 0.3) {
+                        changePercent = (Math.random() * 0.3); // 30%几率大幅上涨
+                    } else if (Math.random() < 0.2) {
+                        changePercent = -(Math.random() * 0.4); // 20%几率大幅下跌
+                    } else {
+                        changePercent = (Math.random() * 0.1 - 0.05); // 其余时间小幅波动
+                    }
+                    break;
+                
+                case 'whale':
+                    // 鲸鱼操纵模式
+                    if (Math.random() < 0.1) {
+                        // 10%几率鲸鱼操作
+                        if (Math.random() > 0.5) {
+                            // 鲸鱼买入
+                            changePercent = (0.1 + Math.random() * 0.2);
+                            dailyVolume += totalSupply * currentPrice * 0.3;
+                        } else {
+                            // 鲸鱼卖出
+                            changePercent = -(0.15 + Math.random() * 0.25);
+                            dailyVolume += totalSupply * currentPrice * 0.4;
+                        }
+                    } else {
+                        changePercent = (Math.random() * 0.05 - 0.025);
+                    }
+                    break;
+                
+                case 'rollercoaster':
+                    // 跌宕起伏模式
+                    const phases = [
+                        () => 0.15 + Math.random() * 0.1,  // 快速上涨
+                        () => -0.2 - Math.random() * 0.15, // 急速下跌
+                        () => 0.05 + Math.random() * 0.05, // 缓慢回升
+                        () => -0.1 - Math.random() * 0.05  // 再次回落
+                    ];
+                    
+                    changePercent = phases[rollercoasterPhase % phases.length]();
+                    rollercoasterPhase++;
+                    break;
+                
+                case 'market-maker':
+                    // 做市商模式 - 维持市场流动性
+                    const spread = parseFloat(document.getElementById('maker-spread').value) / 100 / 2;
+                    const targetPrice = (supportLevel + resistanceLevel) / 2;
+                    
+                    if (currentPrice > targetPrice * (1 + spread)) {
+                        changePercent = -0.01;
+                    } else if (currentPrice < targetPrice * (1 - spread)) {
+                        changePercent = 0.01;
+                    } else {
+                        changePercent = (Math.random() * 0.02 - 0.01);
+                    }
+                    
+                    // 随机添加买卖订单
+                    if (Math.random() < 0.3) {
+                        const volume = parseFloat(document.getElementById('maker-volume').value);
+                        if (Math.random() > 0.5) {
+                            addOrderToBook('buy', volume, currentPrice * (1 - spread), 'limit');
+                        } else {
+                            addOrderToBook('sell', volume, currentPrice * (1 + spread), 'limit');
+                        }
+                    }
+                    break;
+                
+                default:
+                    changePercent = (Math.random() * 0.1 - 0.05);
+            }
+            
+            // 牛市/熊市效应
+            if (isBullMarket) {
+                changePercent = Math.abs(changePercent) * (1 + Math.random());
+            } else if (isBearMarket) {
+                changePercent = -Math.abs(changePercent) * (1 + Math.random());
+            }
+            
+            // 支撑位和阻力位效应
+            if (currentPrice < supportLevel * 1.05) {
+                // 接近支撑位，下跌可能性降低
+                changePercent = Math.max(changePercent, -0.01);
+                // 30%几率反弹
+                if(Math.random() > 0.7) changePercent = Math.abs(changePercent);
+            }
+            
+            if (currentPrice > resistanceLevel * 0.95) {
+                // 接近阻力位，上涨可能性降低
+                changePercent = Math.min(changePercent, 0.01);
+                // 30%几率回调
+                if(Math.random() > 0.7) changePercent = -Math.abs(changePercent);
+            }
+            
+            // 市场情绪效应
+            changePercent += (marketSentiment - 50) / 5000;
+            
+            changePrice(changePercent, 'auto');
+        }
+        
+        // 执行交易
+        function executeTrade(amount, type) {
+            if(isTradingHalted) {
+                showNotification("市场暂停交易中，无法执行交易", "error");
+                return false;
+            }
+            
+            if (amount <= 0) {
+                showNotification('交易数量必须大于0', 'error');
+                return false;
+            }
+            
+            if (type === 'sell' && amount > userCoins) {
+                showNotification('卖出数量不能超过持仓量', 'error');
+                return false;
+            }
+            
+            if (type === 'buy' && amount * currentPrice > userCash) {
+                showNotification('现金余额不足', 'error');
+                return false;
+            }
+            
+            // 计算市场影响并调整价格
+            const impact = calculateMarketImpact(amount, type);
+            const priceChange = changePrice(impact, 'trade');
+            
+            // 更新用户资产
+            if (type === 'buy') {
+                userCash -= amount * currentPrice;
+                userCoins += amount;
+            } else {
+                userCash += amount * currentPrice;
+                userCoins -= amount;
+            }
+            
+            // 记录交易
+            const transaction = {
+                type: type,
+                amount: amount,
+                price: currentPrice,
+                total: amount * currentPrice,
+                time: new Date().toLocaleTimeString(),
+                impact: priceChange
+            };
+            transactions.unshift(transaction);
+            
+            // 更新显示
+            updateUserBalance();
+            updateTradeForms();
+            updateTransactionHistory();
+            
+            return true;
+        }
+        
+        // 杠杆交易
+        function executeLeveragedTrade(amount, type) {
+            if(userLeverage <= 1) {
+                executeTrade(amount, type);
+                return;
+            }
+            
+            const cost = amount * currentPrice;
+            const margin = cost / userLeverage;
+            
+            if(margin > userCash) {
+                showNotification(`保证金不足！需要 ${margin.toFixed(2)} 元作为保证金`, 'error');
+                return false;
+            }
+            
+            // 记录杠杆仓位
+            leveragedPositions.push({
+                type: type,
+                amount: amount,
+                entryPrice: currentPrice,
+                margin: margin,
+                liquidationPrice: type === 'buy' 
+                    ? currentPrice * (1 - 0.8/userLeverage)  // 多仓强平价
+                    : currentPrice * (1 + 0.8/userLeverage)  // 空仓强平价
+            });
+            
+            // 冻结保证金
+            userCash -= margin;
+            
+            // 执行交易（使用全杠杆金额）
+            return executeTrade(amount * userLeverage, type);
+        }
+        
+        // 检查杠杆仓位
+        function checkLeveragedPositions() {
+            leveragedPositions.forEach((position, index) => {
+                // 检查是否触发强平
+                if((position.type === 'buy' && currentPrice <= position.liquidationPrice) ||
+                   (position.type === 'sell' && currentPrice >= position.liquidationPrice)) {
+                    // 强制平仓
+                    showNotification(`杠杆仓位触发强平！损失保证金 ${position.margin.toFixed(2)} 元`, 'error');
+                    leveragedPositions.splice(index, 1);
+                    
+                    // 平仓处理
+                    if(position.type === 'buy') {
+                        userCoins -= position.amount * userLeverage;
+                    } else {
+                        userCoins += position.amount * userLeverage;
+                    }
+                    
+                    updateUserBalance();
+                }
+            });
+        }
+        
+        // 更新交易记录
+        function updateTransactionHistory() {
+            const container = document.getElementById('transaction-history');
+            container.innerHTML = '';
+            
+            transactions.slice(0, 50).forEach(tx => {
+                const txElement = document.createElement('div');
+                txElement.className = `transaction-item transaction-${tx.type}`;
+                
+                const typeText = tx.type === 'buy' ? '买入' : '卖出';
+                const impactText = tx.impact >= 0 ? 
+                    `(+${(tx.impact * 100).toFixed(2)}%)` : 
+                    `(${(tx.impact * 100).toFixed(2)}%)`;
+                
+                txElement.innerHTML = `
+                    <span>${tx.time} ${typeText} ${tx.amount.toFixed(2)} 币</span>
+                    <span>@ ${tx.price.toFixed(2)} 元 ${impactText}</span>
+                `;
+                
+                container.appendChild(txElement);
+            });
+        }
+        
+        // 启动/停止自动波动
+        function toggleAutoFluctuation() {
+            const button = document.getElementById('toggleAuto');
+            if (autoIntervalId) {
+                clearInterval(autoIntervalId);
+                autoIntervalId = null;
+                button.textContent = '启动自动波动';
+                button.className = 'btn btn-primary';
+                showNotification("自动波动已停止", "info");
+            } else {
+                const interval = parseInt(document.getElementById('autoInterval').value) * 1000;
+                currentMode = document.getElementById('autoMode').value;
+                autoIntervalId = setInterval(randomFluctuation, interval);
+                button.textContent = '停止自动波动';
+                button.className = 'btn btn-warning';
+                showNotification(`自动波动已启动 (${currentMode}模式)`, "success");
+            }
+        }
+        
+        // 模拟鲸鱼买入
+        function whaleBuy() {
+            const amount = totalSupply * 0.01; // 鲸鱼买入总供应量的1%
+            executeTrade(amount, 'buy');
+            showNotification(`鲸鱼买入 ${amount.toFixed(2)} 波动币，价格被推高！`, "info");
+        }
+        
+        // 模拟鲸鱼卖出
+        function whaleSell() {
+            const amount = totalSupply * 0.01; // 鲸鱼卖出总供应量的1%
+            executeTrade(amount, 'sell');
+            showNotification(`鲸鱼卖出 ${amount.toFixed(2)} 波动币，价格被压低！`, "info");
+        }
+        
+        // 模拟拉盘行动
+        function pumpAction() {
+            changePrice(0.30, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.5;
+            showNotification("市场出现拉盘行动，价格快速上涨30%！", "info");
+        }
+        
+        // 模拟砸盘行动
+        function dumpAction() {
+            changePrice(-0.40, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.6;
+            showNotification("市场出现砸盘行动，价格暴跌40%！", "info");
+        }
+        
+        // 模拟利好消息
+        function goodNews() {
+            changePrice(0.15, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.3;
+            showNotification("市场传出利好消息，价格上涨15%！", "info");
+        }
+        
+        // 模拟利空消息
+        function badNews() {
+            changePrice(-0.18, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.4;
+            showNotification("市场传出利空消息，价格下跌18%！", "info");
+        }
+        
+        // 模拟交易所被盗
+        function exchangeHack() {
+            changePrice(-0.25, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.7;
+            showNotification("交易所宣布被盗，市场恐慌性抛售，价格下跌25%！", "error");
+        }
+        
+        // 模拟监管消息
+        function regulatoryNews() {
+            const change = Math.random() > 0.5 ? 0.20 : -0.20;
+            changePrice(change, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.5;
+            showNotification(`监管消息发布，价格${change > 0 ? '上涨' : '下跌'}${Math.abs(change)*100}%！`, "info");
+        }
+        
+        // 启动牛市周期
+        function startBullMarket() {
+            isBullMarket = true;
+            isBearMarket = false;
+            showNotification("牛市周期开始，市场情绪乐观！", "success");
+        }
+        
+        // 启动熊市周期
+        function startBearMarket() {
+            isBearMarket = true;
+            isBullMarket = false;
+            showNotification("熊市周期开始，市场情绪悲观！", "warning");
+        }
+        
+        // 模拟吸筹阶段
+        function accumulationPhase() {
+            currentMode = 'sideways';
+            if (!autoIntervalId) randomFluctuation();
+            showNotification("市场进入吸筹阶段，价格窄幅震荡", "info");
+        }
+        
+        // 模拟派发阶段
+        function distributionPhase() {
+            currentMode = 'volatile';
+            if (!autoIntervalId) randomFluctuation();
+            showNotification("市场进入派发阶段，价格剧烈波动", "info");
+        }
+        
+        // 跌宕起伏模式
+        function startRollercoaster() {
+            currentMode = 'rollercoaster';
+            rollercoasterPhase = 0;
+            if (!autoIntervalId) {
+                const interval = parseInt(document.getElementById('autoInterval').value) * 1000;
+                autoIntervalId = setInterval(randomFluctuation, interval);
+                document.getElementById('toggleAuto').textContent = '停止自动波动';
+                document.getElementById('toggleAuto').className = 'btn btn-warning';
+            }
+            showNotification("启动跌宕起伏模式！市场将经历剧烈波动周期", "info");
+        }
+        
+        // 政府救市
+        function marketRescue() {
+            changePrice(0.25, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.8;
+            showNotification("政府宣布救市措施，价格强力反弹25%！", "success");
+        }
+        
+        // 机构护盘
+        function institutionalBuy() {
+            changePrice(0.15, 'manual');
+            dailyVolume += totalSupply * currentPrice * 0.6;
+            showNotification("大型机构入场护盘，价格上涨15%！", "info");
+        }
+        
+        // 熔断机制
+        function triggerCircuitBreaker() {
+            isTradingHalted = !isTradingHalted;
+            if(isTradingHalted) {
+                showNotification("触发熔断机制，市场暂停交易！", "error");
+                document.getElementById('price-change').textContent = "(暂停交易)";
+                document.getElementById('price-change').className = 'price-change';
+            } else {
+                showNotification("市场恢复交易", "success");
+                updatePriceDisplay(currentPrice, currentPrice);
+            }
+        }
+        
+        // 强制平仓模拟
+        function simulateStopOut() {
+            if(leveragedPositions.length === 0) {
+                showNotification("没有杠杆仓位可平仓", "info");
+                return;
+            }
+            
+            // 模拟价格剧烈波动触发强平
+            const position = leveragedPositions[0];
+            const oldPrice = currentPrice;
+            
+            if(position.type === 'buy') {
+                currentPrice = position.liquidationPrice * 0.95; // 跌破强平价
+            } else {
+                currentPrice = position.liquidationPrice * 1.05; // 涨破强平价
+            }
+            
+            updatePriceDisplay(currentPrice, oldPrice);
+            showNotification(`模拟价格剧烈波动，触发杠杆仓位强平！损失保证金 ${position.margin.toFixed(2)} 元`, "error");
+            
+            // 移除仓位
+            leveragedPositions.shift();
+        }
+        
+        // 应用自定义价格变化
+        function applyCustomChange() {
+            const change = parseFloat(document.getElementById('custom-change').value);
+            if (isNaN(change)) {
+                showNotification("请输入有效的百分比数值", "error");
+                return;
+            }
+            changePrice(change/100, 'manual');
+            showNotification(`应用自定义价格变化: ${change}%`, "info");
+        }
+        
+        // 模拟死猫反弹
+        function deadCatBounce() {
+            changePrice(0.30, 'manual');
+            setTimeout(() => {
+                changePrice(-0.50, 'manual');
+                showNotification("死猫反弹模式：先涨30%后跌50%", "warning");
+            }, 2000);
+        }
+        
+        // 模拟头肩顶形态
+        function headAndShoulders() {
+            // 左肩
+            changePrice(0.15, 'manual');
+            setTimeout(() => {
+                // 头部
+                changePrice(-0.10, 'manual');
+                setTimeout(() => {
+                    changePrice(0.20, 'manual');
+                    setTimeout(() => {
+                        // 右肩
+                        changePrice(-0.15, 'manual');
+                        setTimeout(() => {
+                            changePrice(0.10, 'manual');
+                            setTimeout(() => {
+                                // 颈线突破
+                                changePrice(-0.30, 'manual');
+                                showNotification("头肩顶形态完成，价格跌破颈线！", "info");
+                            }, 1000);
+                        }, 1000);
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // 模拟双底形态
+        function doubleBottom() {
+            // 第一个底
+            changePrice(-0.20, 'manual');
+            setTimeout(() => {
+                // 反弹
+                changePrice(0.15, 'manual');
+                setTimeout(() => {
+                    // 第二个底
+                    changePrice(-0.10, 'manual');
+                    setTimeout(() => {
+                        // 突破颈线
+                        changePrice(0.25, 'manual');
+                        showNotification("双底形态完成，价格突破颈线！", "info");
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+        
+        // 模拟分叉事件
+        function forkEvent() {
+            const change = Math.random() > 0.5 ? 0.30 : -0.30;
+            changePrice(change, 'manual');
+            showNotification(`分叉事件发生，价格${change > 0 ? '上涨' : '下跌'}30%！`, "info");
+        }
+        
+        // 模拟减半事件
+        function halvingEvent() {
+            totalSupply *= 0.5; // 供应量减半
+            changePrice(0.50, 'manual');
+            showNotification("减半事件发生，供应量减少50%，价格上涨！", "success");
+        }
+        
+        // 模拟空投活动
+        function airdropEvent() {
+            const airdropAmount = userCoins * 0.1; // 10%空投
+            userCoins += airdropAmount;
+            changePrice(0.15, 'manual');
+            showNotification(`获得${airdropAmount.toFixed(2)}波动币空投，价格上涨15%！`, "success");
+            updateUserBalance();
+        }
+        
+        // 模拟季节性效应
+        function seasonalEffect() {
+            const month = new Date().getMonth();
+            let change;
+            
+            // 历史数据显示加密货币通常在年底表现较好
+            if (month >= 10) { // 11-12月
+                change = 0.20;
+            } else if (month >= 7) { // 8-10月
+                change = 0.10;
+            } else if (month >= 4) { // 5-7月
+                change = -0.10;
+            } else { // 1-4月
+                change = 0.05;
+            }
+            
+            changePrice(change, 'manual');
+            showNotification(`季节性效应: ${getMonthName(month)}通常${change > 0 ? '上涨' : '下跌'}`, "info");
+        }
+        
+        // 获取月份名称
+        function getMonthName(month) {
+            const months = ["一月", "二月", "三月", "四月", "五月", "六月", 
+                          "七月", "八月", "九月", "十月", "十一月", "十二月"];
+            return months[month];
+        }
+        
+        // 模拟虚假挂单
+        function spoofingOrder() {
+            // 大量挂单后撤单
+            const amount = totalSupply * 0.02;
+            addOrderToBook(Math.random() > 0.5 ? 'buy' : 'sell', amount, 
+                          currentPrice * (Math.random() > 0.5 ? 0.9 : 1.1), 'limit');
+            
+            setTimeout(() => {
+                // 撤单
+                if (orderBook.bids.length > 0 || orderBook.asks.length > 0) {
+                    if (Math.random() > 0.5 && orderBook.bids.length > 0) {
+                        orderBook.bids.shift();
+                    } else if (orderBook.asks.length > 0) {
+                        orderBook.asks.shift();
+                    }
+                    updateOrderBook(currentPrice);
+                    showNotification("检测到虚假挂单行为：大单被撤销", "warning");
+                }
+            }, 2000);
+        }
+        
+        // 模拟洗盘交易
+        function washTrade() {
+            // 同一账户买卖相同数量，制造虚假交易量
+            const amount = totalSupply * 0.005;
+            executeTrade(amount, 'buy');
+            executeTrade(amount, 'sell');
+            showNotification("检测到洗盘交易：同一账户买卖相同数量", "warning");
+        }
+        
+        // 添加订单到订单簿
+        function addOrderToBook(side, amount, price, type) {
+            const order = {
+                id: Date.now(),
+                side: side,
+                amount: amount,
+                price: price,
+                type: type,
+                timestamp: new Date()
+            };
+            
+            if (side === 'buy') {
+                orderBook.bids.push(order);
+                // 按价格从高到低排序
+                orderBook.bids.sort((a, b) => b.price - a.price);
+            } else {
+                orderBook.asks.push(order);
+                // 按价格从低到高排序
+                orderBook.asks.sort((a, b) => a.price - b.price);
+            }
+            
+            // 如果是用户订单，记录下来
+            if (type !== 'market-maker') {
+                userOrders.push(order);
+            }
+            
+            updateOrderBook(currentPrice);
+            return order;
+        }
+        
+        // 更新订单簿显示
+        function updateOrderBook(currentPrice) {
+            const bidContainer = document.getElementById('bid-orders');
+            const askContainer = document.getElementById('ask-orders');
+            
+            bidContainer.innerHTML = '';
+            askContainer.innerHTML = '';
+            
+            // 显示前10个买单
+            orderBook.bids.slice(0, 10).forEach(order => {
+                const row = document.createElement('div');
+                row.className = 'order-row bid';
+                row.innerHTML = `
+                    <span>${order.price.toFixed(4)}</span>
+                    <span>${order.amount.toFixed(2)}</span>
+                    <span>${(order.price * order.amount).toFixed(2)}</span>
+                `;
+                bidContainer.appendChild(row);
+            });
+            
+            // 显示前10个卖单
+            orderBook.asks.slice(0, 10).forEach(order => {
+                const row = document.createElement('div');
+                row.className = 'order-row ask';
+                row.innerHTML = `
+                    <span>${order.price.toFixed(4)}</span>
+                    <span>${order.amount.toFixed(2)}</span>
+                    <span>${(order.price * order.amount).toFixed(2)}</span>
+                `;
+                askContainer.appendChild(row);
+            });
+            
+            // 更新深度图
+            updateDepthChart();
+        }
+        
+        // 更新深度图
+        function updateDepthChart() {
+            if (!depthChart) return;
+            
+            // 计算累计深度
+            const bids = orderBook.bids.slice(0, 10);
+            const asks = orderBook.asks.slice(0, 10);
+            
+            let bidTotal = 0;
+            let askTotal = 0;
+            
+            const bidData = bids.map(order => {
+                bidTotal += order.amount;
+                return bidTotal;
+            });
+            
+            const askData = asks.map(order => {
+                askTotal += order.amount;
+                return askTotal;
+            });
+            
+            const bidLabels = bids.map(order => order.price.toFixed(4));
+            const askLabels = asks.map(order => order.price.toFixed(4));
+            
+            depthChart.data.labels = [...bidLabels.reverse(), ...askLabels];
+            depthChart.data.datasets[0].data = [...bidData.reverse(), ...Array(askData.length).fill(0)];
+            depthChart.data.datasets[1].data = [...Array(bidData.length).fill(0), ...askData];
+            
+            depthChart.update();
+        }
+        
+        // 检查止损止盈订单
+        function checkStopOrders(currentPrice) {
+            userOrders.forEach((order, index) => {
+                if (order.type === 'stop' || order.type === 'stop-limit') {
+                    if ((order.side === 'sell' && currentPrice <= order.stopPrice) ||
+                        (order.side === 'buy' && currentPrice >= order.stopPrice)) {
+                        
+                        // 触发止损/止盈
+                        if (order.type === 'stop') {
+                            // 市价单
+                            executeTrade(order.amount, order.side);
+                            showNotification(`止损/止盈订单触发: ${order.side === 'buy' ? '买入' : '卖出'} ${order.amount} 币`, "info");
+                        } else {
+                            // 限价单
+                            addOrderToBook(order.side, order.amount, order.price, 'limit');
+                            showNotification(`止损限价单触发: ${order.side === 'buy' ? '买入' : '卖出'} ${order.amount} 币 @ ${order.price}`, "info");
+                        }
+                        
+                        userOrders.splice(index, 1);
+                    }
+                }
+            });
+        }
+        
+        // 提交订单
+        function placeOrder() {
+            const type = document.getElementById('place-order-type').value;
+            const side = document.getElementById('place-order-side').value;
+            const amount = parseFloat(document.getElementById('place-order-amount').value);
+            const price = parseFloat(document.getElementById('place-order-price').value);
+            const stopPrice = parseFloat(document.getElementById('place-order-stop-price').value);
+            
+            if (amount <= 0) {
+                showNotification("订单数量必须大于0", "error");
+                return;
+            }
+            
+            if ((type === 'limit' || type === 'stop-limit') && price <= 0) {
+                showNotification("限价必须大于0", "error");
+                return;
+            }
+            
+            if ((type === 'stop' || type === 'stop-limit') && stopPrice <= 0) {
+                showNotification("触发价格必须大于0", "error");
+                return;
+            }
+            
+            let order;
+            if (type === 'market') {
+                // 市价单立即执行
+                executeTrade(amount, side);
+                showNotification(`市价单执行: ${side === 'buy' ? '买入' : '卖出'} ${amount} 币`, "success");
+            } else if (type === 'limit') {
+                // 限价单加入订单簿
+                order = addOrderToBook(side, amount, price, 'limit');
+                showNotification(`限价单已提交: ${side === 'buy' ? '买入' : '卖出'} ${amount} 币 @ ${price}`, "success");
+            } else if (type === 'stop') {
+                // 止损单记录等待触发
+                userOrders.push({
+                    id: Date.now(),
+                    side: side,
+                    amount: amount,
+                    stopPrice: stopPrice,
+                    type: 'stop',
+                    timestamp: new Date()
+                });
+                showNotification(`止损单已设置: 当价格${side === 'buy' ? '>=' : '<='} ${stopPrice} 时${side === 'buy' ? '买入' : '卖出'} ${amount} 币`, "success");
+            } else if (type === 'stop-limit') {
+                // 止损限价单记录等待触发
+                userOrders.push({
+                    id: Date.now(),
+                    side: side,
+                    amount: amount,
+                    price: price,
+                    stopPrice: stopPrice,
+                    type: 'stop-limit',
+                    timestamp: new Date()
+                });
+                showNotification(`止损限价单已设置: 当价格${side === 'buy' ? '>=' : '<='} ${stopPrice} 时${side === 'buy' ? '买入' : '卖出'} ${amount} 币 @ ${price}`, "success");
+            } else if (type === 'iceberg') {
+                // 冰山订单 - 拆分为多个小订单
+                const chunkSize = amount / 5;
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        addOrderToBook(side, chunkSize, price, 'limit');
+                    }, i * 1000);
+                }
+                showNotification(`冰山订单已提交: 将${amount} 币拆分为5个小单 ${side === 'buy' ? '买入' : '卖出'} @ ${price}`, "success");
+            }
+        }
+        
+        // 撤销所有订单
+        function cancelAllOrders() {
+            orderBook.bids = orderBook.bids.filter(order => {
+                return !userOrders.some(userOrder => userOrder.id === order.id);
+            });
+            
+            orderBook.asks = orderBook.asks.filter(order => {
+                return !userOrders.some(userOrder => userOrder.id === order.id);
+            });
+            
+            userOrders = [];
+            updateOrderBook(currentPrice);
+            showNotification("所有订单已撤销", "info");
+        }
+        
+        // 生成随机新闻
+        function generateRandomNews() {
+            const newsTypes = [
+                {
+                    type: 'positive',
+                    titles: [
+                        "大型机构宣布投资波动币",
+                        "波动币被列入主要交易所",
+                        "波动币技术升级成功完成",
+                        "知名人士支持波动币",
+                        "波动币生态系统扩展"
+                    ],
+                    impact: 0.05
+                },
+                {
+                    type: 'negative',
+                    titles: [
+                        "监管机构调查波动币",
+                        "波动币网络出现延迟",
+                        "交易所暂停波动币提现",
+                        "波动币开发团队分歧",
+                        "安全漏洞影响波动币钱包"
+                    ],
+                    impact: -0.05
+                },
+                {
+                    type: 'neutral',
+                    titles: [
+                        "波动币价格波动加剧",
+                        "分析师对波动币看法分歧",
+                        "波动币社区大会即将举行",
+                        "波动币网络升级计划公布",
+                        "波动币交易量创新高"
+                    ],
+                    impact: 0
+                }
+            ];
+            
+            const newsType = newsTypes[Math.floor(Math.random() * newsTypes.length)];
+            const title = newsType.titles[Math.floor(Math.random() * newsType.titles.length)];
+            
+            addNews(title, newsType.type, newsType.impact);
+        }
+        
+        // 添加新闻
+        function addNews(title, sentiment, impact) {
+            const container = document.getElementById('news-container');
+            const newsItem = document.createElement('div');
+            newsItem.className = `news-item news-${sentiment}`;
+            
+            const now = new Date();
+            const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            newsItem.innerHTML = `
+                <div class="news-time">${timeStr}</div>
+                <div class="news-content">${title}</div>
+            `;
+            
+            container.insertBefore(newsItem, container.firstChild);
+            
+            // 限制新闻数量
+            if (container.children.length > 20) {
+                container.removeChild(container.lastChild);
+            }
+            
+            // 新闻影响市场
+            if (impact !== 0) {
+                changePrice(impact + (Math.random() * 0.02 - 0.01), 'news');
+            }
+        }
+        
+        // 清空新闻
+        function clearNews() {
+            document.getElementById('news-container').innerHTML = '';
+            showNotification("所有新闻已清空", "info");
+        }
+        
+        // 提交自定义新闻
+        function submitCustomNews() {
+            const content = document.getElementById('custom-news').value;
+            const sentiment = document.getElementById('news-sentiment').value;
+            
+            if (!content) {
+                showNotification("请输入新闻内容", "error");
+                return;
+            }
+            
+            let impact = 0;
+            if (sentiment === 'positive') impact = 0.05;
+            if (sentiment === 'negative') impact = -0.05;
+            
+            addNews(content, sentiment, impact);
+            document.getElementById('custom-news').value = '';
+            showNotification("自定义新闻已发布", "success");
+        }
+        
+        // 激活交易策略
+        function activateStrategy() {
+            const strategyType = document.getElementById('strategy-select').value;
+            
+            if (activeStrategy) {
+                showNotification(`已有激活策略: ${activeStrategy}`, "error");
+                return;
+            }
+            
+            let strategyName = '';
+            let params = {};
+            
+            switch(strategyType) {
+                case 'mean-reversion':
+                    strategyName = '均值回归策略';
+                    params.period = parseInt(document.getElementById('mr-period').value);
+                    params.deviation = parseFloat(document.getElementById('mr-deviation').value);
+                    break;
+                    
+                case 'momentum':
+                    strategyName = '动量策略';
+                    params.period = parseInt(document.getElementById('momentum-period').value);
+                    params.threshold = parseFloat(document.getElementById('momentum-threshold').value);
+                    break;
+                    
+                case 'grid':
+                    strategyName = '网格交易策略';
+                    params.upper = parseFloat(document.getElementById('grid-upper').value);
+                    params.lower = parseFloat(document.getElementById('grid-lower').value);
+                    params.levels = parseInt(document.getElementById('grid-levels').value);
+                    break;
+                    
+                case 'custom':
+                    strategyName = '自定义策略';
+                    // 自定义策略参数
+                    break;
+                    
+                default:
+                    strategyName = '基本策略';
+            }
+            
+            activeStrategy = strategyType;
+            strategyTrades = 0;
+            strategyProfit = 0;
+            
+            document.getElementById('active-strategy-name').textContent = strategyName;
+            document.getElementById('strategy-trades').textContent = '0';
+            document.getElementById('strategy-pnl').textContent = '0.00 元';
+            document.getElementById('strategy-status').style.display = 'block';
+            
+            showNotification(`策略激活: ${strategyName}`, "success");
+            
+            // 开始策略执行
+            const capitalPercent = parseInt(document.getElementById('strategy-capital').value) / 100;
+            const strategyInterval = setInterval(() => {
+                if (!activeStrategy) {
+                    clearInterval(strategyInterval);
+                    return;
+                }
+                
+                executeStrategy(strategyType, params, capitalPercent);
+            }, 5000);
+        }
+        
+        // 执行策略
+        function executeStrategy(type, params, capitalPercent) {
+            if (isTradingHalted) return;
+            
+            let shouldBuy = false;
+            let shouldSell = false;
+            
+            switch(type) {
+                case 'mean-reversion':
+                    // 均值回归策略
+                    if (priceHistory.length < params.period) return;
+                    
+                    const recentPrices = priceHistory.slice(-params.period);
+                    const mean = recentPrices.reduce((a, b) => a + b, 0) / params.period;
+                    const std = Math.sqrt(recentPrices.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / params.period);
+                    
+                    const zScore = (currentPrice - mean) / std;
+                    
+                    if (zScore > params.deviation) {
+                        shouldSell = true;
+                    } else if (zScore < -params.deviation) {
+                        shouldBuy = true;
+                    }
+                    break;
+                    
+                case 'momentum':
+                    // 动量策略
+                    if (priceHistory.length < params.period) return;
+                    
+                    const pastPrice = priceHistory[priceHistory.length - params.period];
+                    const momentum = (currentPrice - pastPrice) / pastPrice * 100;
+                    
+                    if (momentum > params.threshold) {
+                        shouldBuy = true;
+                    } else if (momentum < -params.threshold) {
+                        shouldSell = true;
+                    }
+                    break;
+                    
+                case 'grid':
+                    // 网格交易策略
+                    const gridSize = (params.upper - params.lower) / params.levels;
+                    const position = Math.floor((currentPrice - params.lower) / gridSize);
+                    
+                    if (position <= 0) {
+                        shouldBuy = true;
+                    } else if (position >= params.levels) {
+                        shouldSell = true;
+                    } else {
+                        // 网格中间位置，根据当前持仓决定
+                        if (userCoins < totalSupply * 0.01) {
+                            shouldBuy = true;
+                        } else if (userCoins > totalSupply * 0.02) {
+                            shouldSell = true;
+                        }
+                    }
+                    break;
+                    
+                case 'arbitrage':
+                    // 套利策略 (简化版)
+                    if (orderBook.bids.length > 0 && orderBook.asks.length > 0) {
+                        const bestBid = orderBook.bids[0].price;
+                        const bestAsk = orderBook.asks[0].price;
+                        
+                        if (bestBid > bestAsk) {
+                            // 异常情况，理论上不应该发生
+                            shouldBuy = true;
+                            shouldSell = true;
+                        } else if ((bestAsk - bestBid) / bestBid > 0.02) {
+                            // 价差大于2%，可能有机会
+                            shouldBuy = true;
+                            setTimeout(() => shouldSell = true, 1000);
+                        }
+                    }
+                    break;
+                    
+                case 'martingale':
+                    // 马丁格尔策略 (高风险)
+                    if (transactions.length > 0) {
+                        const lastTx = transactions[0];
+                        if (lastTx.type === 'buy' && lastTx.price * 0.95 > currentPrice) {
+                            // 亏损时加倍买入
+                            shouldBuy = true;
+                        } else if (lastTx.type === 'sell' && lastTx.price * 1.05 < currentPrice) {
+                            // 亏损时加倍卖出
+                            shouldSell = true;
+                        }
+                    }
+                    break;
+                    
+                case 'dca':
+                    // 定投策略
+                    shouldBuy = true;
+                    break;
+            }
+            
+            // 执行交易
+            const amount = Math.max(0.01, (userCash * capitalPercent / currentPrice).toFixed(2));
+            
+            if (shouldBuy && userCash > amount * currentPrice) {
+                if (executeTrade(amount, 'buy')) {
+                    strategyTrades++;
+                    showNotification(`策略执行: 买入 ${amount} 波动币`, "info");
+                }
+            } else if (shouldSell && userCoins > amount) {
+                if (executeTrade(amount, 'sell')) {
+                    strategyTrades++;
+                    showNotification(`策略执行: 卖出 ${amount} 波动币`, "info");
+                }
+            }
+            
+            // 更新策略状态
+            document.getElementById('strategy-trades').textContent = strategyTrades;
+            document.getElementById('strategy-pnl').textContent = (userCash + userCoins * currentPrice - 100000).toFixed(2) + ' 元';
+        }
+        
+        // 停止策略
+        function stopStrategy() {
+            if (!activeStrategy) {
+                showNotification("没有激活的策略", "info");
+                return;
+            }
+            
+            activeStrategy = null;
+            document.getElementById('strategy-status').style.display = 'none';
+            showNotification("交易策略已停止", "info");
+        }
+        
+        // 回测策略
+        function backtestStrategy() {
+            const strategyType = document.getElementById('strategy-select').value;
+            let params = {};
+            let strategyName = '';
+            
+            switch(strategyType) {
+                case 'mean-reversion':
+                    strategyName = '均值回归策略';
+                    params.period = parseInt(document.getElementById('mr-period').value);
+                    params.deviation = parseFloat(document.getElementById('mr-deviation').value);
+                    break;
+                    
+                case 'momentum':
+                    strategyName = '动量策略';
+                    params.period = parseInt(document.getElementById('momentum-period').value);
+                    params.threshold = parseFloat(document.getElementById('momentum-threshold').value);
+                    break;
+                    
+                case 'grid':
+                    strategyName = '网格交易策略';
+                    params.upper = parseFloat(document.getElementById('grid-upper').value);
+                    params.lower = parseFloat(document.getElementById('grid-lower').value);
+                    params.levels = parseInt(document.getElementById('grid-levels').value);
+                    break;
+                    
+                default:
+                    strategyName = '基本策略';
+            }
+            
+            // 简化回测 - 实际应用中应该使用更复杂的方法
+            let balance = 100000;
+            let coins = 0;
+            let trades = 0;
+            
+            for (let i = params.period || 10; i < priceHistory.length; i++) {
+                const currentPrice = priceHistory[i];
+                const pastPrices = priceHistory.slice(i - (params.period || 10), i);
+                
+                let shouldBuy = false;
+                let shouldSell = false;
+                
+                switch(strategyType) {
+                    case 'mean-reversion':
+                        const mean = pastPrices.reduce((a, b) => a + b, 0) / pastPrices.length;
+                        const std = Math.sqrt(pastPrices.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / pastPrices.length);
+                        const zScore = (currentPrice - mean) / std;
+                        
+                        if (zScore > params.deviation) shouldSell = true;
+                        if (zScore < -params.deviation) shouldBuy = true;
+                        break;
+                        
+                    case 'momentum':
+                        const pastPrice = pastPrices[0];
+                        const momentum = (currentPrice - pastPrice) / pastPrice * 100;
+                        
+                        if (momentum > params.threshold) shouldBuy = true;
+                        if (momentum < -params.threshold) shouldSell = true;
+                        break;
+                        
+                    case 'grid':
+                        const gridSize = (params.upper - params.lower) / params.levels;
+                        const position = Math.floor((currentPrice - params.lower) / gridSize);
+                        
+                        if (position <= 0) shouldBuy = true;
+                        if (position >= params.levels) shouldSell = true;
+                        break;
+                }
+                
+                const amount = balance * 0.1 / currentPrice; // 每次交易10%资金
+                
+                if (shouldBuy && balance > amount * currentPrice) {
+                    balance -= amount * currentPrice;
+                    coins += amount;
+                    trades++;
+                } else if (shouldSell && coins > amount) {
+                    balance += amount * currentPrice;
+                    coins -= amount;
+                    trades++;
+                }
+            }
+            
+            const finalValue = balance + coins * priceHistory[priceHistory.length - 1];
+            const profit = finalValue - 100000;
+            const profitPercent = (profit / 100000 * 100).toFixed(2);
+            
+            const results = document.getElementById('backtest-results');
+            results.innerHTML = `
+                <h4>${strategyName} 回测结果</h4>
+                <p>初始资金: 100,000.00 元</p>
+                <p>最终价值: ${finalValue.toFixed(2)} 元</p>
+                <p>总盈亏: ${profit >= 0 ? '+' : ''}${profit.toFixed(2)} 元 (${profitPercent}%)</p>
+                <p>交易次数: ${trades}</p>
+                <p>年化收益率: ${(profitPercent * 12).toFixed(2)}%</p>
+            `;
+            results.style.display = 'block';
+            
+            showNotification(`策略回测完成: 最终价值 ${finalValue.toFixed(2)} 元`, "success");
+        }
+        
+        // 期货买入做多
+        function buyFutures() {
+            const amount = parseInt(document.getElementById('futures-amount').value);
+            const leverage = parseInt(document.getElementById('futures-leverage').value);
+            const price = parseFloat(document.getElementById('futures-price').value);
+            
+            const margin = (amount * price) / leverage;
+            
+            if (margin > userCash) {
+                showNotification(`保证金不足！需要 ${margin.toFixed(2)} 元`, "error");
+                return;
+            }
+            
+            futuresPositions.push({
+                type: 'long',
+                amount: amount,
+                entryPrice: price,
+                margin: margin,
+                leverage: leverage,
+                liquidationPrice: price * (1 - 1/leverage)
+            });
+            
+            userCash -= margin;
+            updateUserBalance();
+            updateFuturesPositions();
+            
+            showNotification(`期货做多仓位已建立: ${amount} 张 @ ${price} (${leverage}倍杠杆)`, "success");
+        }
+        
+        // 期货卖出做空
+        function sellFutures() {
+            const amount = parseInt(document.getElementById('futures-amount').value);
+            const leverage = parseInt(document.getElementById('futures-leverage').value);
+            const price = parseFloat(document.getElementById('futures-price').value);
+            
+            const margin = (amount * price) / leverage;
+            
+            if (margin > userCash) {
+                showNotification(`保证金不足！需要 ${margin.toFixed(2)} 元`, "error");
+                return;
+            }
+            
+            futuresPositions.push({
+                type: 'short',
+                amount: amount,
+                entryPrice: price,
+                margin: margin,
+                leverage: leverage,
+                liquidationPrice: price * (1 + 1/leverage)
+            });
+            
+            userCash -= margin;
+            updateUserBalance();
+            updateFuturesPositions();
+            
+            showNotification(`期货做空仓位已建立: ${amount} 张 @ ${price} (${leverage}倍杠杆)`, "success");
+        }
+        
+        // 更新期货持仓显示
+        function updateFuturesPositions() {
+            const container = document.getElementById('futures-list');
+            container.innerHTML = '';
+            
+            futuresPositions.forEach((position, index) => {
+                const profit = position.type === 'long'
+                    ? (currentPrice - position.entryPrice) * position.amount
+                    : (position.entryPrice - currentPrice) * position.amount;
+                
+                const profitPercent = (profit / position.margin * 100).toFixed(2);
+                
+                const positionElement = document.createElement('div');
+                positionElement.className = 'portfolio-item';
+                positionElement.innerHTML = `
+                    <span>${position.type === 'long' ? '做多' : '做空'} ${position.amount} 张 @ ${position.entryPrice.toFixed(4)} (${position.leverage}×)</span>
+                    <span class="portfolio-profit ${profit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                        ${profit >= 0 ? '+' : ''}${profit.toFixed(2)} (${profitPercent}%)
+                    </span>
+                    <button class="btn btn-warning" onclick="closeFuturesPosition(${index})">平仓</button>
+                `;
+                
+                container.appendChild(positionElement);
+                
+                // 检查强平
+                if ((position.type === 'long' && currentPrice <= position.liquidationPrice) ||
+                    (position.type === 'short' && currentPrice >= position.liquidationPrice)) {
+                    showNotification(`期货仓位触发强平！损失保证金 ${position.margin.toFixed(2)} 元`, "error");
+                    futuresPositions.splice(index, 1);
+                    updateFuturesPositions();
+                }
+            });
+            
+            if (futuresPositions.length === 0) {
+                container.innerHTML = '<p>没有期货持仓</p>';
+            }
+        }
+        
+        // 平仓期货
+        function closeFuturesPosition(index) {
+            if (index < 0 || index >= futuresPositions.length) return;
+            
+            const position = futuresPositions[index];
+            let profit;
+            
+            if (position.type === 'long') {
+                profit = (currentPrice - position.entryPrice) * position.amount;
+            } else {
+                profit = (position.entryPrice - currentPrice) * position.amount;
+            }
+            
+            userCash += position.margin + profit;
+            futuresPositions.splice(index, 1);
+            
+            updateUserBalance();
+            updateFuturesPositions();
+            
+            showNotification(`期货仓位已平仓，${profit >= 0 ? '盈利' : '亏损'} ${Math.abs(profit).toFixed(2)} 元`, 
+                            profit >= 0 ? "success" : "error");
+        }
+        
+        // 买入期权
+        function buyOptions() {
+            const type = document.getElementById('options-type').value;
+            const strike = parseFloat(document.getElementById('options-strike').value);
+            const amount = parseInt(document.getElementById('options-amount').value);
+            const premium = parseFloat(document.getElementById('options-premium').value);
+            
+            const cost = amount * premium;
+            
+            if (cost > userCash) {
+                showNotification(`资金不足！需要 ${cost.toFixed(2)} 元`, "error");
+                return;
+            }
+            
+            optionsPositions.push({
+                type: type,
+                strike: strike,
+                amount: amount,
+                premium: premium,
+                purchasePrice: currentPrice,
+                expiry: document.getElementById('options-expiry').value
+            });
+            
+            userCash -= cost;
+            updateUserBalance();
+            updateOptionsPositions();
+            
+            showNotification(`已买入 ${amount} 张${type === 'call' ? '看涨' : '看跌'}期权 (行权价 ${strike})`, "success");
+        }
+        
+        // 卖出期权
+        function sellOptions() {
+            const type = document.getElementById('options-type').value;
+            const strike = parseFloat(document.getElementById('options-strike').value);
+            const amount = parseInt(document.getElementById('options-amount').value);
+            const premium = parseFloat(document.getElementById('options-premium').value);
+            
+            optionsPositions.push({
+                type: type,
+                strike: strike,
+                amount: -amount, // 负数表示卖出
+                premium: premium,
+                salePrice: currentPrice,
+                expiry: document.getElementById('options-expiry').value
+            });
+            
+            userCash += amount * premium;
+            updateUserBalance();
+            updateOptionsPositions();
+            
+            showNotification(`已卖出 ${amount} 张${type === 'call' ? '看涨' : '看跌'}期权 (行权价 ${strike})`, "success");
+        }
+        
+        // 更新期权持仓显示
+        function updateOptionsPositions() {
+            const container = document.getElementById('options-list');
+            container.innerHTML = '';
+            
+            optionsPositions.forEach((option, index) => {
+                let value = 0;
+                let profit = 0;
+                
+                if (option.amount > 0) {
+                    // 买入期权
+                    if (option.type === 'call') {
+                        value = Math.max(0, currentPrice - option.strike);
+                    } else {
+                        value = Math.max(0, option.strike - currentPrice);
+                    }
+                    
+                    profit = (value - option.premium) * option.amount;
+                } else {
+                    // 卖出期权
+                    if (option.type === 'call') {
+                        value = Math.max(0, currentPrice - option.strike);
+                    } else {
+                        value = Math.max(0, option.strike - currentPrice);
+                    }
+                    
+                    profit = (option.premium - value) * -option.amount;
+                }
+                
+                const positionElement = document.createElement('div');
+                positionElement.className = 'portfolio-item';
+                positionElement.innerHTML = `
+                    <span>${option.type === 'call' ? '看涨' : '看跌'} ${Math.abs(option.amount)} 张 @ ${option.strike.toFixed(4)} (${option.amount > 0 ? '买入' : '卖出'})</span>
+                    <span class="portfolio-profit ${profit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                        ${profit >= 0 ? '+' : ''}${profit.toFixed(2)}
+                    </span>
+                    <button class="btn btn-warning" onclick="closeOptionsPosition(${index})">平仓</button>
+                `;
+                
+                container.appendChild(positionElement);
+            });
+            
+            if (optionsPositions.length === 0) {
+                container.innerHTML = '<p>没有期权持仓</p>';
+            }
+        }
+        
+        // 平仓期权
+        function closeOptionsPosition(index) {
+            if (index < 0 || index >= optionsPositions.length) return;
+            
+            const option = optionsPositions[index];
+            let profit;
+            
+            if (option.amount > 0) {
+                // 买入期权平仓
+                let value = 0;
+                if (option.type === 'call') {
+                    value = Math.max(0, currentPrice - option.strike);
+                } else {
+                    value = Math.max(0, option.strike - currentPrice);
+                }
+                
+                profit = (value - option.premium) * option.amount;
+                userCash += value * option.amount;
+            } else {
+                // 卖出期权平仓
+                let value = 0;
+                if (option.type === 'call') {
+                    value = Math.max(0, currentPrice - option.strike);
+                } else {
+                    value = Math.max(0, option.strike - currentPrice);
+                }
+                
+                profit = (option.premium - value) * -option.amount;
+                userCash -= value * -option.amount;
+            }
+            
+            optionsPositions.splice(index, 1);
+            updateUserBalance();
+            updateOptionsPositions();
+            
+            showNotification(`期权仓位已平仓，${profit >= 0 ? '盈利' : '亏损'} ${Math.abs(profit).toFixed(2)} 元`, 
+                            profit >= 0 ? "success" : "error");
+        }
+        
+        // 永续合约做多
+        function longSwap() {
+            const amount = parseInt(document.getElementById('swap-amount').value);
+            const leverage = parseInt(document.getElementById('swap-leverage').value);
+            
+            const margin = (amount * currentPrice) / leverage;
+            
+            if (margin > userCash) {
+                showNotification(`保证金不足！需要 ${margin.toFixed(2)} 元`, "error");
+                return;
+            }
+            
+            swapPositions.push({
+                type: 'long',
+                amount: amount,
+                entryPrice: currentPrice,
+                margin: margin,
+                leverage: leverage,
+                liquidationPrice: currentPrice * (1 - 1/leverage)
+            });
+            
+            userCash -= margin;
+            updateUserBalance();
+            updateSwapPositions();
+            
+            showNotification(`永续合约做多仓位已建立: ${amount} 张 @ ${currentPrice.toFixed(4)} (${leverage}倍杠杆)`, "success");
+        }
+        
+        // 永续合约做空
+        function shortSwap() {
+            const amount = parseInt(document.getElementById('swap-amount').value);
+            const leverage = parseInt(document.getElementById('swap-leverage').value);
+            
+            const margin = (amount * currentPrice) / leverage;
+            
+            if (margin > userCash) {
+                showNotification(`保证金不足！需要 ${margin.toFixed(2)} 元`, "error");
+                return;
+            }
+            
+            swapPositions.push({
+                type: 'short',
+                amount: amount,
+                entryPrice: currentPrice,
+                margin: margin,
+                leverage: leverage,
+                liquidationPrice: currentPrice * (1 + 1/leverage)
+            });
+            
+            userCash -= margin;
+            updateUserBalance();
+            updateSwapPositions();
+            
+            showNotification(`永续合约做空仓位已建立: ${amount} 张 @ ${currentPrice.toFixed(4)} (${leverage}倍杠杆)`, "success");
+        }
+        
+        // 更新永续合约持仓显示
+        function updateSwapPositions() {
+            const container = document.getElementById('swap-list');
+            container.innerHTML = '';
+            
+            swapPositions.forEach((swap, index) => {
+                const profit = swap.type === 'long'
+                    ? (currentPrice - swap.entryPrice) * swap.amount * swap.leverage
+                    : (swap.entryPrice - currentPrice) * swap.amount * swap.leverage;
+                
+                const profitPercent = (profit / swap.margin * 100).toFixed(2);
+                
+                const positionElement = document.createElement('div');
+                positionElement.className = 'portfolio-item';
+                positionElement.innerHTML = `
+                    <span>${swap.type === 'long' ? '做多' : '做空'} ${swap.amount} 张 @ ${swap.entryPrice.toFixed(4)} (${swap.leverage}×)</span>
+                    <span class="portfolio-profit ${profit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                        ${profit >= 0 ? '+' : ''}${profit.toFixed(2)} (${profitPercent}%)
+                    </span>
+                    <button class="btn btn-warning" onclick="closeSwapPosition(${index})">平仓</button>
+                `;
+                
+                container.appendChild(positionElement);
+                
+                // 检查强平
+                if ((swap.type === 'long' && currentPrice <= swap.liquidationPrice) ||
+                    (swap.type === 'short' && currentPrice >= swap.liquidationPrice)) {
+                    showNotification(`永续合约仓位触发强平！损失保证金 ${swap.margin.toFixed(2)} 元`, "error");
+                    swapPositions.splice(index, 1);
+                    updateSwapPositions();
+                }
+            });
+            
+            if (swapPositions.length === 0) {
+                container.innerHTML = '<p>没有永续合约持仓</p>';
+            }
+        }
+        
+        // 平仓永续合约
+        function closeSwapPosition(index) {
+            if (index < 0 || index >= swapPositions.length) return;
+            
+            const swap = swapPositions[index];
+            let profit;
+            
+            if (swap.type === 'long') {
+                profit = (currentPrice - swap.entryPrice) * swap.amount * swap.leverage;
+            } else {
+                profit = (swap.entryPrice - currentPrice) * swap.amount * swap.leverage;
+            }
+            
+            userCash += swap.margin + profit;
+            swapPositions.splice(index, 1);
+            
+            updateUserBalance();
+            updateSwapPositions();
+            
+            showNotification(`永续合约仓位已平仓，${profit >= 0 ? '盈利' : '亏损'} ${Math.abs(profit).toFixed(2)} 元`, 
+                            profit >= 0 ? "success" : "error");
+        }
+        
+        // 对冲投资组合
+        function hedgePortfolio() {
+            if (userCoins <= 0) {
+                showNotification("没有波动币持仓需要对冲", "info");
+                return;
+            }
+            
+            // 简单对冲：卖出期货或买入看跌期权
+            const hedgeAmount = Math.min(userCoins, totalSupply * 0.01); // 对冲不超过持仓量
+            
+            // 随机选择对冲方式
+            if (Math.random() > 0.5) {
+                // 期货对冲
+                futuresPositions.push({
+                    type: 'short',
+                    amount: hedgeAmount,
+                    entryPrice: currentPrice,
+                    margin: (hedgeAmount * currentPrice) / 5, // 5倍杠杆
+                    leverage: 5,
+                    liquidationPrice: currentPrice * 1.2
+                });
+                
+                userCash -= (hedgeAmount * currentPrice) / 5;
+                showNotification(`已建立期货对冲仓位: 做空 ${hedgeAmount} 张 @ ${currentPrice.toFixed(4)} (5倍杠杆)`, "success");
+            } else {
+                // 期权对冲
+                const premium = currentPrice * 0.05; // 期权费5%
+                const cost = hedgeAmount * premium;
+                
+                if (cost > userCash) {
+                    showNotification(`资金不足，无法买入看跌期权对冲！需要 ${cost.toFixed(2)} 元`, "error");
+                    return;
+                }
+                
+                optionsPositions.push({
+                    type: 'put',
+                    strike: currentPrice * 0.95, // 行权价低于当前价5%
+                    amount: hedgeAmount,
+                    premium: premium,
+                    purchasePrice: currentPrice,
+                    expiry: 'monthly'
+                });
+                
+                userCash -= cost;
+                showNotification(`已买入看跌期权对冲: ${hedgeAmount} 张 @ ${(currentPrice * 0.95).toFixed(4)}`, "success");
+            }
+            
+            updateUserBalance();
+            updateFuturesPositions();
+            updateOptionsPositions();
+        }
+        
+        // 模拟到期结算
+        function simulateExpiry() {
+            // 期货结算
+            futuresPositions.forEach((future, index) => {
+                const profit = future.type === 'long'
+                    ? (currentPrice - future.entryPrice) * future.amount
+                    : (future.entryPrice - currentPrice) * future.amount;
+                
+                userCash += future.margin + profit;
+                showNotification(`期货合约到期结算: ${profit >= 0 ? '盈利' : '亏损'} ${Math.abs(profit).toFixed(2)} 元`, 
+                                profit >= 0 ? "success" : "error");
+            });
+            
+            futuresPositions = [];
+            
+            // 期权结算
+            optionsPositions.forEach((option, index) => {
+                let value = 0;
+                
+                if (option.type === 'call') {
+                    value = Math.max(0, currentPrice - option.strike);
+                } else {
+                    value = Math.max(0, option.strike - currentPrice);
+                }
+                
+                if (option.amount > 0) {
+                    // 买入期权
+                    const profit = (value - option.premium) * option.amount;
+                    userCash += value * option.amount;
+                    showNotification(`看${option.type === 'call' ? '涨' : '跌'}期权到期结算: ${profit >= 0 ? '盈利' : '亏损'} ${Math.abs(profit).toFixed(2)} 元`, 
+                                    profit >= 0 ? "success" : "error");
+                } else {
+                    // 卖出期权
+                    const profit = (option.premium - value) * -option.amount;
+                    userCash -= value * -option.amount;
+                    showNotification(`卖出看${option.type === 'call' ? '涨' : '跌'}期权到期结算: ${profit >= 0 ? '盈利' : '亏损'} ${Math.abs(profit).toFixed(2)} 元`, 
+                                    profit >= 0 ? "success" : "error");
+                }
+            });
+            
+            optionsPositions = [];
+            
+            updateUserBalance();
+            updateFuturesPositions();
+            updateOptionsPositions();
+            showNotification("所有衍生品合约已到期结算", "info");
+        }
+        
+        // 平仓所有衍生品
+        function liquidateDerivatives() {
+            // 平仓期货
+            futuresPositions.forEach((future, index) => {
+                const profit = future.type === 'long'
+                    ? (currentPrice - future.entryPrice) * future.amount
+                    : (future.entryPrice - currentPrice) * future.amount;
+                
+                userCash += future.margin + profit;
+            });
+            
+            futuresPositions = [];
+            
+            // 平仓期权
+            optionsPositions.forEach((option, index) => {
+                let value = 0;
+                
+                if (option.type === 'call') {
+                    value = Math.max(0, currentPrice - option.strike);
+                } else {
+                    value = Math.max(0, option.strike - currentPrice);
+                }
+                
+                if (option.amount > 0) {
+                    // 买入期权
+                    userCash += value * option.amount;
+                } else {
+                    // 卖出期权
+                    userCash -= value * -option.amount;
+                }
+            });
+            
+            optionsPositions = [];
+            
+            // 平仓永续合约
+            swapPositions.forEach((swap, index) => {
+                const profit = swap.type === 'long'
+                    ? (currentPrice - swap.entryPrice) * swap.amount * swap.leverage
+                    : (swap.entryPrice - currentPrice) * swap.amount * swap.leverage;
+                
+                userCash += swap.margin + profit;
+            });
+            
+            swapPositions = [];
+            
+            updateUserBalance();
+            updateFuturesPositions();
+            updateOptionsPositions();
+            updateSwapPositions();
+            showNotification("所有衍生品仓位已平仓", "info");
+        }
+        
+        // 切换暗黑模式
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            
+            // 更新图表主题
+            updateChartTheme();
+            
+            // 更新按钮文本
+            document.getElementById('darkModeToggle').textContent = isDarkMode ? '☀️ 明亮模式' : '🌓 暗黑模式';
+        }
+        
+        // 更新图表主题
+        function updateChartTheme() {
+            if (!chart) return;
+            
+            // 更新价格图表
+            chart.options.scales.y.grid.color = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            chart.options.scales.y.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+            chart.options.scales.x.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+            chart.options.plugins.legend.labels.color = isDarkMode ? '#ffffff' : '#333333';
+            chart.update();
+            
+            // 更新深度图表
+            if (depthChart) {
+                depthChart.options.scales.y.grid.color = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                depthChart.options.scales.y.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+                depthChart.options.scales.x.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+                depthChart.options.plugins.legend.labels.color = isDarkMode ? '#ffffff' : '#333333';
+                depthChart.update();
+            }
+            
+            // 更新资产分配图表
+            if (allocationChart) {
+                allocationChart.options.plugins.legend.labels.color = isDarkMode ? '#ffffff' : '#333333';
+                allocationChart.update();
+            }
+            
+            // 更新表现图表
+            if (performanceChart) {
+                performanceChart.options.scales.y.grid.color = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                performanceChart.options.scales.y.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+                performanceChart.options.scales.x.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+                performanceChart.options.plugins.legend.labels.color = isDarkMode ? '#ffffff' : '#333333';
+                performanceChart.update();
+            }
+            
+            // 更新风险图表
+            if (riskChart) {
+                riskChart.options.scales.r.angleLines.color = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                riskChart.options.scales.r.grid.color = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                riskChart.options.scales.r.pointLabels.color = isDarkMode ? '#ffffff' : '#333333';
+                riskChart.options.scales.r.ticks.backdropColor = isDarkMode ? '#121212' : '#ffffff';
+                riskChart.options.scales.r.ticks.color = isDarkMode ? '#ffffff' : '#333333';
+                riskChart.options.plugins.legend.labels.color = isDarkMode ? '#ffffff' : '#333333';
+                riskChart.update();
+            }
+        }
+        
+        // 重置用户资产
+        function resetBalance() {
+            userCash = 100000;
+            userCoins = 0;
+            leveragedPositions = [];
+            futuresPositions = [];
+            optionsPositions = [];
+            swapPositions = [];
+            transactions = [];
+            portfolioHistory = [];
+            
+            updateUserBalance();
+            updateTransactionHistory();
+            updateFuturesPositions();
+            updateOptionsPositions();
+            updateSwapPositions();
+            
+            showNotification("资产已重置为初始状态", "success");
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            updateMarketData(currentPrice);
+            updateUserBalance();
+            updateTradeForms();
+            updateFuturesPositions();
+            updateOptionsPositions();
+            updateSwapPositions();
+            
+            // 标签切换
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(`${this.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+            
+            // 杠杆滑块
+            document.getElementById('leverage-amount').addEventListener('input', function() {
+                userLeverage = parseInt(this.value);
+                document.getElementById('leverage-display').textContent = userLeverage + '×';
+                updateUserBalance();
+            });
+            
+            // 仓位大小滑块
+            document.getElementById('position-size').addEventListener('input', function() {
+                document.getElementById('position-size-value').textContent = this.value + '%';
+            });
+            
+            // 策略资金滑块
+            document.getElementById('strategy-capital').addEventListener('input', function() {
+                document.getElementById('strategy-capital-value').textContent = this.value + '%';
+            });
+            
+            // 做市商价差滑块
+            document.getElementById('maker-spread').addEventListener('input', function() {
+                document.getElementById('maker-spread-value').textContent = this.value + '%';
+            });
+            
+            // 数量输入事件
+            document.getElementById('buy-amount').addEventListener('input', updateTradeForms);
+            document.getElementById('sell-amount').addEventListener('input', updateTradeForms);
+            
+            // 订单类型变化
+            document.getElementById('buy-order-type').addEventListener('change', function() {
+                document.getElementById('buy-limit-group').style.display = 
+                    this.value === 'limit' ? 'block' : 'none';
+            });
+            
+            document.getElementById('sell-order-type').addEventListener('change', function() {
+                document.getElementById('sell-limit-group').style.display = 
+                    this.value === 'limit' ? 'block' : 'none';
+            });
+            
+            document.getElementById('place-order-type').addEventListener('change', function() {
+                document.getElementById('price-group').style.display = 
+                    (this.value === 'limit' || this.value === 'stop-limit') ? 'block' : 'none';
+                document.getElementById('stop-price-group').style.display = 
+                    (this.value === 'stop' || this.value === 'stop-limit') ? 'block' : 'none';
+            });
+            
+            document.getElementById('strategy-select').addEventListener('change', function() {
+                document.querySelectorAll('.strategy-params').forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                if (this.value === 'mean-reversion') {
+                    document.getElementById('mean-reversion-params').style.display = 'block';
+                } else if (this.value === 'momentum') {
+                    document.getElementById('momentum-params').style.display = 'block';
+                } else if (this.value === 'grid') {
+                    document.getElementById('grid-params').style.display = 'block';
+                }
+            });
+            
+            // 基本波动按钮
+            document.getElementById('small-up').addEventListener('click', () => changePrice(0.02, 'manual'));
+            document.getElementById('small-down').addEventListener('click', () => changePrice(-0.02, 'manual'));
+            document.getElementById('random-normal').addEventListener('click', () => {
+                currentMode = 'random';
+                randomFluctuation();
+            });
+            document.getElementById('medium-up').addEventListener('click', () => changePrice(0.08, 'manual'));
+            document.getElementById('medium-down').addEventListener('click', () => changePrice(-0.08, 'manual'));
+            
+            // 极端行情按钮
+            document.getElementById('large-up').addEventListener('click', () => changePrice(0.20, 'manual'));
+            document.getElementById('large-down').addEventListener('click', () => changePrice(-0.20, 'manual'));
+            document.getElementById('flash-crash').addEventListener('click', () => {
+                changePrice(-0.50, 'manual');
+                dailyVolume += totalSupply * currentPrice * 0.5; // 大量交易量
+            });
+            document.getElementById('moon-shot').addEventListener('click', () => {
+                changePrice(1.00, 'manual');
+                dailyVolume += totalSupply * currentPrice * 0.3;
+            });
+            document.getElementById('bubble-burst').addEventListener('click', () => {
+                changePrice(-0.70, 'manual');
+                dailyVolume += totalSupply * currentPrice * 0.8;
+            });
+            document.getElementById('dead-cat-bounce').addEventListener('click', deadCatBounce);
+            
+            // 市场形态按钮
+            document.getElementById('sideways').addEventListener('click', () => {
+                currentMode = 'sideways';
+                if (!autoIntervalId) randomFluctuation();
+                showNotification("已切换为横盘震荡模式", "info");
+            });
+            document.getElementById('volatile').addEventListener('click', () => {
+                currentMode = 'volatile';
+                if (!autoIntervalId) randomFluctuation();
+                showNotification("已切换为剧烈波动模式", "info");
+            });
+            document.getElementById('trend-up').addEventListener('click', () => {
+                trendDirection = 1;
+                trendCount = 5;
+                currentMode = 'trend';
+                if (!autoIntervalId) randomFluctuation();
+                showNotification("已切换为上升趋势模式", "info");
+            });
+            document.getElementById('trend-down').addEventListener('click', () => {
+                trendDirection = -1;
+                trendCount = 5;
+                currentMode = 'trend';
+                if (!autoIntervalId) randomFluctuation();
+                showNotification("已切换为下降趋势模式", "info");
+            });
+            document.getElementById('support-test').addEventListener('click', () => {
+                changePrice((supportLevel - currentPrice) / currentPrice, 'manual');
+                showNotification(`测试支撑位 ${supportLevel.toFixed(2)}`, "info");
+            });
+            document.getElementById('resistance-test').addEventListener('click', () => {
+                changePrice((resistanceLevel - currentPrice) / currentPrice, 'manual');
+                showNotification(`测试阻力位 ${resistanceLevel.toFixed(2)}`, "info");
+            });
+            document.getElementById('rollercoaster-btn').addEventListener('click', startRollercoaster);
+            document.getElementById('head-shoulders').addEventListener('click', headAndShoulders);
+            document.getElementById('double-bottom').addEventListener('click', doubleBottom);
+            
+            // 系统操作按钮
+            document.getElementById('reset-price').addEventListener('click', () => {
+                const oldPrice = currentPrice;
+                currentPrice = 5.00;
+                updatePriceDisplay(currentPrice, oldPrice);
+                showNotification("价格已重置为5.00元", "info");
+            });
+            document.getElementById('reset-history').addEventListener('click', () => {
+                priceHistory = generateInitialHistory(30, 4.5, 6.0);
+                priceHistory[29] = currentPrice; // 保持当前价格
+                updateChart();
+                showNotification("历史数据已重置", "info");
+            });
+            document.getElementById('add-liquidity').addEventListener('click', () => {
+                totalSupply *= 1.5;
+                marketCap = totalSupply * currentPrice;
+                showNotification("已增加市场流动性，总供应量增加50%", "info");
+            });
+            document.getElementById('panic-sell').addEventListener('click', () => {
+                changePrice(-0.30, 'manual');
+                dailyVolume += totalSupply * currentPrice * 0.7;
+                showNotification("市场恐慌性抛售！", "warning");
+            });
+            document.getElementById('market-maker-btn').addEventListener('click', () => {
+                currentMode = 'market-maker';
+                if (!autoIntervalId) {
+                    const interval = parseInt(document.getElementById('autoInterval').value) * 1000;
+                    autoIntervalId = setInterval(randomFluctuation, interval);
+                    document.getElementById('toggleAuto').textContent = '停止自动波动';
+                    document.getElementById('toggleAuto').className = 'btn btn-warning';
+                }
+                showNotification("做市商模式激活，将维持市场流动性", "info");
+            });
+            document.getElementById('reset-balance').addEventListener('click', resetBalance);
+            
+            // 技术分析按钮
+            document.getElementById('show-ma').addEventListener('click', () => {
+                const ma5 = (priceHistory.slice(-5).reduce((a,b) => a+b, 0)/5).toFixed(2);
+                const ma10 = (priceHistory.slice(-10).reduce((a,b) => a+b, 0)/10).toFixed(2);
+                const ma30 = (priceHistory.slice(-30).reduce((a,b) => a+b, 0)/30).toFixed(2);
+                
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>移动平均线 (MA)</h4>
+                        <p>5日均线: ${ma5}</p>
+                        <p>10日均线: ${ma10}</p>
+                        <p>30日均线: ${ma30}</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('show-macd').addEventListener('click', () => {
+                const dif = (Math.random()*2-1).toFixed(4);
+                const dea = (Math.random()*2-1).toFixed(4);
+                const macd = (Math.random()*0.5-0.25).toFixed(4);
+                
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>MACD 指标</h4>
+                        <p>DIF: ${dif}</p>
+                        <p>DEA: ${dea}</p>
+                        <p>MACD: ${macd}</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('show-rsi').addEventListener('click', () => {
+                const rsi6 = (30 + Math.random()*50).toFixed(2);
+                const rsi12 = (30 + Math.random()*50).toFixed(2);
+                const rsi24 = (30 + Math.random()*50).toFixed(2);
+                
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>RSI 指标</h4>
+                        <p>6日RSI: ${rsi6}</p>
+                        <p>12日RSI: ${rsi12}</p>
+                        <p>24日RSI: ${rsi24}</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('show-bollinger').addEventListener('click', () => {
+                const mid = priceHistory.slice(-20).reduce((a,b) => a+b, 0)/20;
+                const std = Math.sqrt(priceHistory.slice(-20).reduce((a,b) => a+Math.pow(b-mid,2),0)/20);
+                const upper = mid + 2*std;
+                const lower = mid - 2*std;
+                
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>布林带指标</h4>
+                        <p>上轨: ${upper.toFixed(2)}</p>
+                        <p>中轨: ${mid.toFixed(2)}</p>
+                        <p>下轨: ${lower.toFixed(2)}</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('show-fibonacci').addEventListener('click', () => {
+                const high = Math.max(...priceHistory.slice(-30));
+                const low = Math.min(...priceHistory.slice(-30));
+                const diff = high - low;
+                const fib236 = high - diff*0.236;
+                const fib382 = high - diff*0.382;
+                const fib50 = high - diff*0.5;
+                const fib618 = high - diff*0.618;
+                
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>斐波那契回撤位</h4>
+                        <p>0%: ${high.toFixed(2)} (高点)</p>
+                        <p>23.6%: ${fib236.toFixed(2)}</p>
+                        <p>38.2%: ${fib382.toFixed(2)}</p>
+                        <p>50%: ${fib50.toFixed(2)}</p>
+                        <p>61.8%: ${fib618.toFixed(2)}</p>
+                        <p>100%: ${low.toFixed(2)} (低点)</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('show-ichimoku').addEventListener('click', () => {
+                const tenkan = (Math.max(...priceHistory.slice(-9)) + Math.min(...priceHistory.slice(-9))) / 2;
+                const kijun = (Math.max(...priceHistory.slice(-26)) + Math.min(...priceHistory.slice(-26))) / 2;
+                const senkouA = (tenkan + kijun) / 2;
+                const senkouB = (Math.max(...priceHistory.slice(-52)) + Math.min(...priceHistory.slice(-52))) / 2;
+                
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>一目均衡表</h4>
+                        <p>转换线: ${tenkan.toFixed(2)}</p>
+                        <p>基准线: ${kijun.toFixed(2)}</p>
+                        <p>先行带A: ${senkouA.toFixed(2)}</p>
+                        <p>先行带B: ${senkouB.toFixed(2)}</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('show-volume').addEventListener('click', () => {
+                document.getElementById('indicator-display').innerHTML = `
+                    <div style="text-align: center;">
+                        <h4>成交量分析</h4>
+                        <p>24小时成交量: ${dailyVolume.toLocaleString('zh-CN')} 元</p>
+                        <p>量价关系: ${getVolumePriceRelation()}</p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('apply-indicator').addEventListener('click', () => {
+                const params = document.getElementById('indicator-params').value;
+                showNotification(`指标参数已应用: ${params}`, "info");
+            });
+            
+            document.getElementById('custom-indicator').addEventListener('click', () => {
+                showNotification("自定义指标功能将在未来版本中提供", "info");
+            });
+            
+            document.getElementById('backtest-indicator').addEventListener('click', () => {
+                showNotification("指标回测功能将在未来版本中提供", "info");
+            });
+            
+            // 高级模拟按钮
+            document.getElementById('pump-action').addEventListener('click', pumpAction);
+            document.getElementById('dump-action').addEventListener('click', dumpAction);
+            document.getElementById('whale-buy').addEventListener('click', whaleBuy);
+            document.getElementById('whale-sell').addEventListener('click', whaleSell);
+            document.getElementById('good-news').addEventListener('click', goodNews);
+            document.getElementById('bad-news').addEventListener('click', badNews);
+            document.getElementById('exchange-hack').addEventListener('click', exchangeHack);
+            document.getElementById('regulatory').addEventListener('click', regulatoryNews);
+            document.getElementById('bull-market').addEventListener('click', startBullMarket);
+            document.getElementById('bear-market').addEventListener('click', startBearMarket);
+            document.getElementById('accumulation').addEventListener('click', accumulationPhase);
+            document.getElementById('distribution').addEventListener('click', distributionPhase);
+            document.getElementById('apply-custom').addEventListener('click', applyCustomChange);
+            document.getElementById('spoofing').addEventListener('click', spoofingOrder);
+            document.getElementById('wash-trade').addEventListener('click', washTrade);
+            document.getElementById('fork-event').addEventListener('click', forkEvent);
+            document.getElementById('halving-event').addEventListener('click', halvingEvent);
+            document.getElementById('airdrop').addEventListener('click', airdropEvent);
+            document.getElementById('seasonal-effect').addEventListener('click', seasonalEffect);
+            
+            // 做市商控制
+            document.getElementById('activate-maker').addEventListener('click', () => {
+                currentMode = 'market-maker';
+                if (!autoIntervalId) {
+                    const interval = parseInt(document.getElementById('autoInterval').value) * 1000;
+                    autoIntervalId = setInterval(randomFluctuation, interval);
+                    document.getElementById('toggleAuto').textContent = '停止自动波动';
+                    document.getElementById('toggleAuto').className = 'btn btn-warning';
+                }
+                showNotification("做市商模式激活，将维持市场流动性", "info");
+            });
+            
+            document.getElementById('stop-maker').addEventListener('click', () => {
+                if (currentMode === 'market-maker') {
+                    currentMode = 'random';
+                    showNotification("做市商模式已停用", "info");
+                } else {
+                    showNotification("做市商模式未激活", "info");
+                }
+            });
+            
+            // 杠杆和救市按钮
+            document.getElementById('leverage-buy').addEventListener('click', function() {
+                const amount = parseFloat(document.getElementById('buy-amount').value) || 0;
+                if(executeLeveragedTrade(amount, 'buy')) {
+                    showNotification(`成功使用 ${userLeverage}倍杠杆买入 ${(amount*userLeverage).toFixed(2)} 波动币`, "success");
+                }
+            });
+            
+            document.getElementById('leverage-sell').addEventListener('click', function() {
+                const amount = parseFloat(document.getElementById('sell-amount').value) || 0;
+                if(executeLeveragedTrade(amount, 'sell')) {
+                    showNotification(`成功使用 ${userLeverage}倍杠杆卖出 ${(amount*userLeverage).toFixed(2)} 波动币`, "success");
+                }
+            });
+            
+            document.getElementById('market-rescue').addEventListener('click', marketRescue);
+            document.getElementById('institutional-buy').addEventListener('click', institutionalBuy);
+            document.getElementById('circuit-breaker').addEventListener('click', triggerCircuitBreaker);
+            document.getElementById('stop-out').addEventListener('click', simulateStopOut);
+            document.getElementById('hedge-position').addEventListener('click', hedgePortfolio);
+            document.getElementById('liquidity-injection').addEventListener('click', () => {
+                totalSupply *= 1.2;
+                marketCap = totalSupply * currentPrice;
+                showNotification("流动性注入：总供应量增加20%", "info");
+            });
+            
+            // 订单簿功能
+            document.getElementById('place-order-btn').addEventListener('click', placeOrder);
+            document.getElementById('cancel-all-orders').addEventListener('click', cancelAllOrders);
+            
+            // 投资组合功能
+            document.getElementById('rebalance-portfolio').addEventListener('click', () => {
+                const targetCoinPercent = 0.3; // 目标30%波动币
+                const currentCoinValue = userCoins * currentPrice;
+                const totalAssets = userCash + currentCoinValue;
+                const targetCoinValue = totalAssets * targetCoinPercent;
+                
+                if (currentCoinValue > targetCoinValue) {
+                    // 卖出多余波动币
+                    const sellAmount = (currentCoinValue - targetCoinValue) / currentPrice;
+                    if (executeTrade(sellAmount, 'sell')) {
+                        showNotification(`投资组合再平衡: 卖出 ${sellAmount.toFixed(2)} 波动币以达到目标配置`, "info");
+                    }
+                } else if (currentCoinValue < targetCoinValue) {
+                    // 买入不足波动币
+                    const buyAmount = (targetCoinValue - currentCoinValue) / currentPrice;
+                    if (executeTrade(buyAmount, 'buy')) {
+                        showNotification(`投资组合再平衡: 买入 ${buyAmount.toFixed(2)} 波动币以达到目标配置`, "info");
+                    }
+                } else {
+                    showNotification("投资组合已在平衡状态", "info");
+                }
+            });
+            
+            document.getElementById('diversify-portfolio').addEventListener('click', () => {
+                showNotification("多元化投资功能将在未来版本中提供", "info");
+            });
+            
+            document.getElementById('export-portfolio').addEventListener('click', () => {
+                showNotification("投资组合数据已复制到剪贴板", "success");
+            });
+            
+            // 交易策略功能
+            document.getElementById('activate-strategy').addEventListener('click', activateStrategy);
+            document.getElementById('backtest-strategy').addEventListener('click', backtestStrategy);
+            document.getElementById('stop-strategy').addEventListener('click', stopStrategy);
+            
+            // 新闻功能
+            document.getElementById('generate-news').addEventListener('click', generateRandomNews);
+            document.getElementById('clear-news').addEventListener('click', clearNews);
+            document.getElementById('submit-custom-news').addEventListener('click', submitCustomNews);
+            
+            // 衍生品功能
+            document.getElementById('buy-futures').addEventListener('click', buyFutures);
+            document.getElementById('sell-futures').addEventListener('click', sellFutures);
+            document.getElementById('buy-options').addEventListener('click', buyOptions);
+            document.getElementById('sell-options').addEventListener('click', sellOptions);
+            document.getElementById('long-swap').addEventListener('click', longSwap);
+            document.getElementById('short-swap').addEventListener('click', shortSwap);
+            document.getElementById('hedge-portfolio').addEventListener('click', hedgePortfolio);
+            document.getElementById('simulate-expiry').addEventListener('click', simulateExpiry);
+            document.getElementById('liquidate-derivatives').addEventListener('click', liquidateDerivatives);
+            
+            // 自动波动控制
+            document.getElementById('toggleAuto').addEventListener('click', toggleAutoFluctuation);
+            document.getElementById('autoMode').addEventListener('change', function() {
+                currentMode = this.value;
+            });
+            
+            // 买卖按钮
+            document.getElementById('buy-btn').addEventListener('click', function() {
+                const type = document.getElementById('buy-order-type').value;
+                const amount = parseFloat(document.getElementById('buy-amount').value) || 0;
+                
+                if (type === 'market') {
+                    if (executeTrade(amount, 'buy')) {
+                        showNotification(`成功买入 ${amount.toFixed(2)} 波动币，单价 ${currentPrice.toFixed(2)} 元`, "success");
+                    }
+                } else {
+                    const price = parseFloat(document.getElementById('buy-limit-price').value);
+                    addOrderToBook('buy', amount, price, 'limit');
+                }
+            });
+            
+            document.getElementById('sell-btn').addEventListener('click', function() {
+                const type = document.getElementById('sell-order-type').value;
+                const amount = parseFloat(document.getElementById('sell-amount').value) || 0;
+                
+                if (type === 'market') {
+                    if (executeTrade(amount, 'sell')) {
+                        showNotification(`成功卖出 ${amount.toFixed(2)} 波动币，单价 ${currentPrice.toFixed(2)} 元`, "success");
+                    }
+                } else {
+                    const price = parseFloat(document.getElementById('sell-limit-price').value);
+                    addOrderToBook('sell', amount, price, 'limit');
+                }
+            });
+            
+            document.getElementById('buy-stop-limit').addEventListener('click', function() {
+                const amount = parseFloat(document.getElementById('buy-amount').value) || 0;
+                const stopPrice = currentPrice * 1.05;
+                const limitPrice = currentPrice * 1.03;
+                
+                userOrders.push({
+                    id: Date.now(),
+                    side: 'buy',
+                    amount: amount,
+                    price: limitPrice,
+                    stopPrice: stopPrice,
+                    type: 'stop-limit',
+                    timestamp: new Date()
+                });
+                
+                showNotification(`买入止损限价单已设置: 当价格>=${stopPrice.toFixed(2)}时买入 ${amount} 币 @ ${limitPrice.toFixed(2)}`, "success");
+            });
+            
+            document.getElementById('sell-stop-limit').addEventListener('click', function() {
+                const amount = parseFloat(document.getElementById('sell-amount').value) || 0;
+                const stopPrice = currentPrice * 0.95;
+                const limitPrice = currentPrice * 0.97;
+                
+                userOrders.push({
+                    id: Date.now(),
+                    side: 'sell',
+                    amount: amount,
+                    price: limitPrice,
+                    stopPrice: stopPrice,
+                    type: 'stop-limit',
+                    timestamp: new Date()
+                });
+                
+                showNotification(`卖出止损限价单已设置: 当价格<=${stopPrice.toFixed(2)}时卖出 ${amount} 币 @ ${limitPrice.toFixed(2)}`, "success");
+            });
+            
+            // 暗黑模式切换
+            document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+        });
+        
+        // 获取量价关系描述
+        function getVolumePriceRelation() {
+            if (priceHistory.length < 2) return "数据不足";
+            
+            const lastPrice = priceHistory[priceHistory.length - 1];
+            const prevPrice = priceHistory[priceHistory.length - 2];
+            const priceChange = (lastPrice - prevPrice) / prevPrice;
+            
+            if (priceChange > 0 && dailyVolume > totalSupply * currentPrice * 0.1) {
+                return "量价齐升 (健康上涨)";
+            } else if (priceChange > 0 && dailyVolume < totalSupply * currentPrice * 0.05) {
+                return "无量上涨 (谨慎)";
+            } else if (priceChange < 0 && dailyVolume > totalSupply * currentPrice * 0.1) {
+                return "放量下跌 (弱势)";
+            } else if (priceChange < 0 && dailyVolume < totalSupply * currentPrice * 0.05) {
+                return "无量下跌 (可能反弹)";
+            } else {
+                return "量价关系中性";
+            }
+        }
+        
+        // 全局函数供HTML调用
+        window.closeFuturesPosition = closeFuturesPosition;
+        window.closeOptionsPosition = closeOptionsPosition;
+        window.closeSwapPosition = closeSwapPosition;
+    </script>
+</body>
+</html>
